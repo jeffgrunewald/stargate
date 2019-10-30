@@ -1,0 +1,15 @@
+%{
+  "bunt": {:hex, :bunt, "0.2.0", "951c6e801e8b1d2cbe58ebbd3e616a869061ddadcc4863d0a2182541acae9a38", [:mix], [], "hexpm"},
+  "castore": {:hex, :castore, "0.1.4", "e7fd082c0e755716826a20b95c479f5dd42f536f9d12b8da8f47c92f1d4aed58", [:mix], [], "hexpm"},
+  "credo": {:hex, :credo, "1.1.5", "caec7a3cadd2e58609d7ee25b3931b129e739e070539ad1a0cd7efeeb47014f4", [:mix], [{:bunt, "~> 0.2.0", [hex: :bunt, repo: "hexpm", optional: false]}, {:jason, "~> 1.0", [hex: :jason, repo: "hexpm", optional: false]}], "hexpm"},
+  "dialyxir": {:hex, :dialyxir, "1.0.0-rc.7", "6287f8f2cb45df8584317a4be1075b8c9b8a69de8eeb82b4d9e6c761cf2664cd", [:mix], [{:erlex, ">= 0.2.5", [hex: :erlex, repo: "hexpm", optional: false]}], "hexpm"},
+  "divo": {:hex, :divo, "1.1.9", "6f91b0a02bd97800eb9a99abd771b4c9b67d282b67abc223eb2832b93f557b7e", [:mix], [{:jason, "~> 1.1", [hex: :jason, repo: "hexpm", optional: false]}, {:patiently, "~> 0.2", [hex: :patiently, repo: "hexpm", optional: false]}], "hexpm"},
+  "divo_pulsar": {:hex, :divo_pulsar, "0.1.0", "5380501f9ed3f5deadf526de446fc30e5ed22b04e61ebd28a99f9ddaead8f8cc", [:mix], [{:divo, "~> 1.1.0", [hex: :divo, repo: "hexpm", optional: false]}], "hexpm"},
+  "erlex": {:hex, :erlex, "0.2.5", "e51132f2f472e13d606d808f0574508eeea2030d487fc002b46ad97e738b0510", [:mix], [], "hexpm"},
+  "jason": {:hex, :jason, "1.1.2", "b03dedea67a99223a2eaf9f1264ce37154564de899fd3d8b9a21b1a6fd64afe7", [:mix], [{:decimal, "~> 1.0", [hex: :decimal, repo: "hexpm", optional: true]}], "hexpm"},
+  "mint": {:hex, :mint, "0.4.0", "b93a10192957624ed4a8b8641eff1819019c36487bdf49e2b505afd2cc9b7911", [:mix], [{:castore, "~> 0.1.0", [hex: :castore, repo: "hexpm", optional: true]}], "hexpm"},
+  "mojito": {:hex, :mojito, "0.5.0", "de003eafc09633d236e487621f1a8d7d55ca0414a5a418e09ab70a595f9c9c12", [:mix], [{:castore, "~> 0.1", [hex: :castore, repo: "hexpm", optional: false]}, {:mint, "~> 0.4.0", [hex: :mint, repo: "hexpm", optional: false]}, {:poolboy, "~> 1.5", [hex: :poolboy, repo: "hexpm", optional: false]}], "hexpm"},
+  "patiently": {:hex, :patiently, "0.2.0", "67eb139591e10c4b363ae0198e832552f191c58894731efd3bf124ec4722267a", [:mix], [], "hexpm"},
+  "poolboy": {:hex, :poolboy, "1.5.2", "392b007a1693a64540cead79830443abf5762f5d30cf50bc95cb2c1aaafa006b", [:rebar3], [], "hexpm"},
+  "websockex": {:hex, :websockex, "0.4.2", "9a3b7dc25655517ecd3f8ff7109a77fce94956096b942836cdcfbc7c86603ecc", [:mix], [], "hexpm"},
+}

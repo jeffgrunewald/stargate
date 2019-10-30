@@ -26,6 +26,7 @@ defmodule Stargate.MixProject do
   defp deps() do
     [
       {:credo, "~> 1.1", only: :dev, runtime: false},
+      {:dialyxir, "~> 1.0.0-rc.7", only: [:dev], runtime: false},
       {:divo, "~> 1.1.0", only: [:dev, :integration]},
       {:divo_pulsar, "~> 0.1.0", only: [:dev, :integration]},
       {:jason, "~> 1.1"},
