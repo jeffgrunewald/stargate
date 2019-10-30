@@ -31,7 +31,7 @@ defmodule Stargate.MixProject do
       {:divo_pulsar, "~> 0.1.0", only: [:dev, :integration]},
       {:jason, "~> 1.1"},
       {:mojito, "~> 0.5.0"},
-      {:websockex, "~> 0.4.0"},
+      {:websockex, "~> 0.4.0"}
     ]
   end
 
