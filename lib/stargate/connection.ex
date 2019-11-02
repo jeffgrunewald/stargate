@@ -33,4 +33,27 @@ defmodule Stargate.Connection do
       end
     end
   end
+
+  def connection_settings(opts, type) do
+    host = Keyword.fetch!(opts, :host) |> format_host()
+    protocol = Keyword.get(opts, :protocol, "ws")
+    persistence = Keyword.get(opts, :persistence, "persistent")
+    tenant = Keyword.fetch!(opts, :tenant)
+    namespace = Keyword.fetch!(opts, :namespace)
+    topic = Keyword.fetch!(opts, :topic)
+
+    %{
+      url: "#{protocol}://#{host}/ws/v2/#{type}/#{persistence}/#{tenant}/#{namespace}/#{topic}",
+      host: host,
+      protocol: protocol,
+      persistence: persistence,
+      tenant: tenant,
+      namespace: namespace,
+      topic: topic
+    }
+  end
+
+  defp format_host([{host, port}]), do: "#{host}:#{port}"
+  defp format_host({host, port}), do: "#{host}:#{port}"
+  defp format_host(connection) when is_binary(connection), do: connection
 end

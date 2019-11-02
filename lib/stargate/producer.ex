@@ -40,21 +40,20 @@ defmodule Stargate.Producer do
 
   @spec start_link(keyword()) :: GenServer.on_start()
   def start_link(opts) do
-    url = Keyword.fetch!(opts, :url)
     acknowledger = Keyword.get(opts, :acknowledger)
 
-    state = %{
-      url: url,
-      acknowledger: acknowledger
-    }
+    state =
+      opts
+      |> Stargate.Connection.connection_settings("producer")
+      |> Map.put(:acknowledger, acknowledger)
 
-    WebSockex.start_link(url, __MODULE__, state)
+    WebSockex.start_link(state.url, __MODULE__, state)
   end
 
   @impl WebSockex
   def handle_frame({:text, msg}, %{acknowledger: acknowledger} = state)
       when is_pid(acknowledger) do
-    Logger.debug("Received a message : #{inspect(msg)}")
+    Logger.debug("Received response : #{inspect(msg)}")
 
     msg
     |> Jason.decode!()
@@ -66,7 +65,7 @@ defmodule Stargate.Producer do
 
   @impl WebSockex
   def handle_frame({:text, msg}, state) do
-    Logger.debug("Received a message : #{inspect(msg)}")
+    Logger.debug("Received response : #{inspect(msg)}")
 
     {:ok, state}
   end
