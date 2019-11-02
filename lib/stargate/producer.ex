@@ -52,7 +52,8 @@ defmodule Stargate.Producer do
   end
 
   @impl WebSockex
-  def handle_frame({:text, msg}, %{acknowledger: acknowledger} = state) when is_pid(acknowledger) do
+  def handle_frame({:text, msg}, %{acknowledger: acknowledger} = state)
+      when is_pid(acknowledger) do
     Logger.debug("Received a message : #{inspect(msg)}")
 
     msg
@@ -86,6 +87,7 @@ defmodule Stargate.Producer do
 
   defp format_response(%{"result" => error, "errorMsg" => explanation} = response) do
     reason = "Error of type : #{error} ocurred; #{explanation}"
+
     case Map.get(response, "context") do
       nil -> {:error, reason}
       context -> {:error, reason, context}
