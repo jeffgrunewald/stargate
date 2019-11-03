@@ -3,5 +3,13 @@ defmodule Stargate.Producer.Acknowledger do
   TODO
   """
 
-  @callback produce_ack(term()) :: :ack | {:ack, term()}
+  @callback produce_ack(
+              {:ok, term()}
+              | {:ok, term(), term()}
+              | {:error, term()}
+              | {:error, term(), term()}
+            ) ::
+              :ack
+              | {:ack, term()}
+              | {:error, term()}
 end
