@@ -14,7 +14,7 @@ defmodule Stargate.Reader do
 
     state =
       opts
-      |> Stargate.Connection.connection_settings("reader")
+      |> Stargate.Connection.connection_settings("reader", "")
       |> Map.put(:handler, handler)
 
     WebSockex.start_link(state.url, __MODULE__, state)
@@ -27,12 +27,13 @@ defmodule Stargate.Reader do
     |> Stargate.Message.new(state.persistence, state.tenant, state.namespace, state.topic)
     |> state.handler.handle_messages()
     |> case do
-        {:ack, id} ->
-          ack = construct_response(id)
-          WebSockex.send_frame(self(), {:text, ack})
-        :continue ->
-          :continue
-      end
+      {:ack, id} ->
+        ack = construct_response(id)
+        WebSockex.send_frame(self(), {:text, ack})
+
+      :continue ->
+        :continue
+    end
 
     {:ok, state}
   end

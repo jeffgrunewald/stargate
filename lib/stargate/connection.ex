@@ -34,7 +34,7 @@ defmodule Stargate.Connection do
     end
   end
 
-  def connection_settings(opts, type) do
+  def connection_settings(opts, type, params) do
     host = Keyword.fetch!(opts, :host) |> format_host()
     protocol = Keyword.get(opts, :protocol, "ws")
     persistence = Keyword.get(opts, :persistence, "persistent")
@@ -42,8 +42,17 @@ defmodule Stargate.Connection do
     namespace = Keyword.fetch!(opts, :namespace)
     topic = Keyword.fetch!(opts, :topic)
 
+    base_url =
+      "#{protocol}://#{host}/ws/v2/#{type}/#{persistence}/#{tenant}/#{namespace}/#{topic}"
+
+    url =
+      case params do
+        "" -> base_url
+        _ -> base_url <> "?" <> params
+      end
+
     %{
-      url: "#{protocol}://#{host}/ws/v2/#{type}/#{persistence}/#{tenant}/#{namespace}/#{topic}",
+      url: url,
       host: host,
       protocol: protocol,
       persistence: persistence,
