@@ -8,7 +8,6 @@ defmodule Stargate.Producer do
   @doc """
   TODO
   """
-
   @spec produce(String.t(), String.t()) :: :ok | {:error, term()}
   def produce(url, message) when is_binary(url) and is_binary(message) do
     payload = construct_payload(message)
@@ -26,7 +25,6 @@ defmodule Stargate.Producer do
   @doc """
   TODO
   """
-
   @spec produce(pid(), String.t()) :: :ok | {:error, term()}
   def produce(conn, message) when is_pid(conn) and is_binary(message) do
     payload = construct_payload(message)
@@ -37,7 +35,6 @@ defmodule Stargate.Producer do
   @doc """
   TODO
   """
-
   @spec start_link(keyword()) :: GenServer.on_start()
   def start_link(opts) do
     acknowledger = Keyword.get(opts, :acknowledger)
@@ -52,13 +49,13 @@ defmodule Stargate.Producer do
 
   @impl WebSockex
   def handle_frame({:text, msg}, %{acknowledger: acknowledger} = state)
-      when is_pid(acknowledger) do
+      when is_atom(acknowledger) do
     Logger.debug("Received response : #{inspect(msg)}")
 
     msg
     |> Jason.decode!()
     |> format_response()
-    |> forward_response(acknowledger)
+    |> acknowledger.produce_ack()
 
     {:ok, state}
   end
@@ -92,6 +89,4 @@ defmodule Stargate.Producer do
       context -> {:error, reason, context}
     end
   end
-
-  defp forward_response(response, pid), do: GenServer.cast(pid, {:ack, response})
 end
