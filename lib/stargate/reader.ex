@@ -4,18 +4,52 @@ defmodule Stargate.Reader do
   """
   use Stargate.Connection
 
+  defmodule State do
+    @moduledoc """
+    TODO
+    """
+    defstruct [
+      :url,
+      :host,
+      :protocol,
+      :persistence,
+      :tenant,
+      :namespace,
+      :topic,
+      :handler,
+      :query_params
+    ]
+  end
+
   @doc """
-  TODO
+  config = [
+    host: [localhost: 8080],
+    protocol: "ws",                 optional \\ ws
+    persistence: "persistent",      optional \\ persistent
+    tenant: "public",
+    namespace: "default",
+    topic: "foo",
+    handler: MyApp.Reader.Handler,
+    query_params: %{                optional
+      reader_name: "myapp-reader,
+      queue_size: 1_000,              \\ 1_000
+      starting_message: :latest       \\ :latest
+    }
+  ]
   """
 
   @spec start_link(keyword()) :: GenServer.on_start()
   def start_link(opts) do
     handler = Keyword.fetch!(opts, :handler)
+    query_params_config = Keyword.get(opts, :query_params)
+    query_params = Stargate.Reader.QueryParams.build_params(query_params_config)
 
     state =
       opts
-      |> Stargate.Connection.connection_settings("reader", "")
+      |> Stargate.Connection.connection_settings("reader", query_params)
       |> Map.put(:handler, handler)
+      |> Map.put(:query_params, query_params_config)
+      |> (fn fields -> struct(State, fields) end).()
 
     WebSockex.start_link(state.url, __MODULE__, state)
   end

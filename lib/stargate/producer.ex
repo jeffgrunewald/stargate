@@ -96,7 +96,7 @@ defmodule Stargate.Producer do
     msg
     |> Jason.decode!()
     |> format_response()
-    |> acknowledger.produce_ack()
+    |> acknowledger.ack()
 
     {:ok, state}
   end
