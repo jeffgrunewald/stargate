@@ -3,12 +3,6 @@ defmodule Stargate do
   Documentation for Stargate.
   """
 
-  @doc """
-  TODO
-  """
-
-  defdelegate produce(client_or_url, message), to: Stargate.Producer
-
   defmodule Message do
     @moduledoc """
     TODO

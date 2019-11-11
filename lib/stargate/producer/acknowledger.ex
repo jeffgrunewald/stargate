@@ -2,46 +2,54 @@ defmodule Stargate.Producer.Acknowledger do
   @moduledoc """
   TODO
   """
+  require Logger
+  use GenServer
 
-  @callback init(term()) :: {:ok, term()}
+  @doc """
+  TODO
+  """
+  def start_link(opts) do
+    GenServer.start_link(__MODULE__, opts, name: __MODULE__)
+  end
 
-  @callback ack(
-              {:ok, term()}
-              | {:ok, term(), term()}
-              | {:error, term()}
-              | {:error, term(), term()}
-            ) ::
-              :ack | :error
+  @doc """
+  TODO
+  """
+  @impl GenServer
+  def init(_opts) do
+    {:ok, %{}}
+  end
 
-  @callback ack(
-              {:ok, term(), term()}
-              | {:ok, term(), term(), term()}
-              | {:error, term(), term()}
-              | {:error, term(), term(), term()}
-            ) ::
-              {:ack, term()} | {:error, term()}
+  @impl GenServer
+  def handle_cast({:produce, ctx, ack}, state) do
+    {:noreply, Map.put(state, ctx, ack)}
+  end
 
-  defmacro __using__(_opts) do
-    quote do
-      @behaviour Stargate.Producer.Acknowledger
+  @impl GenServer
+  def handle_cast({:ack, ctx}, state) do
+    {value, new_state} = Map.pop(state, ctx)
 
-      def init(args) do
-        {:ok, args}
-      end
-
-      def ack(response) do
-        case elem(response, 0) do
-          :ok -> :ack
-          :error -> :error
-        end
-      end
-
-      def ack(response, state) do
-        case ack(response) do
-          :ok -> {:ok, state}
-          :error -> {:ok, state}
-        end
-      end
+    case value do
+      pid when is_pid(pid) ->
+        send(pid, :ack)
+      {module, function, args} ->
+        apply(module, function, args)
     end
+
+    {:noreply, new_state}
+  end
+
+  @impl GenServer
+  def handle_cast({:error, reason, ctx}, state) do
+    {value, new_state} = Map.pop(state, ctx)
+
+    case value do
+      pid when is_pid(pid) ->
+        send(pid, {:error, reason})
+      _mfa ->
+        Logger.error("Failed to execute produce for reason : #{inspect(reason)}")
+    end
+
+    {:noreply, new_state}
   end
 end
