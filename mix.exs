@@ -27,10 +27,11 @@ defmodule Stargate.MixProject do
     [
       {:credo, "~> 1.1", only: :dev, runtime: false},
       {:dialyxir, "~> 1.0.0-rc.7", only: [:dev], runtime: false},
-      {:divo, "~> 1.1.0", only: [:dev, :integration]},
+      {:divo, "~> 1.1", only: [:dev, :integration]},
       {:divo_pulsar, "~> 0.1.0", only: [:dev, :integration]},
       {:jason, "~> 1.1"},
       {:mojito, "~> 0.5.0"},
+      {:puid, "~> 1.0"},
       {:websockex, "~> 0.4.0"}
     ]
   end

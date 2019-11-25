@@ -1,3 +1,5 @@
+[![Master](https://travis-ci.org/jeffgrunewald/stargate.svg?branch=master)](https://travis-ci.org/jeffgrunewald/stargate)
+
 # Stargate
 
 An Apache Pulsar client written in Elixir.
