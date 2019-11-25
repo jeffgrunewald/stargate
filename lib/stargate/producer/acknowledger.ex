@@ -32,6 +32,7 @@ defmodule Stargate.Producer.Acknowledger do
     case value do
       pid when is_pid(pid) ->
         send(pid, :ack)
+
       {module, function, args} ->
         apply(module, function, args)
     end
@@ -46,6 +47,7 @@ defmodule Stargate.Producer.Acknowledger do
     case value do
       pid when is_pid(pid) ->
         send(pid, {:error, reason})
+
       _mfa ->
         Logger.error("Failed to execute produce for reason : #{inspect(reason)}")
     end
