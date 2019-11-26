@@ -4,12 +4,62 @@ defmodule Stargate.Producer do
   """
   require Logger
   use Stargate.Connection
+  use Puid
+  import Stargate.Supervisor
+  alias Stargate.Producer.{Acknowledger, QueryParams}
+
+  @doc """
+  TODO
+  """
+  @spec produce(String.t(), String.t()) :: :ok | {:error, term()}
+  def produce(url, message) when is_binary(url) and is_binary(message) do
+    payload = construct_payload(message)
+
+    with {:ok, temp_producer} <- WebSockex.start(url, __MODULE__, %{}),
+         :ok <- produce(temp_producer, payload) do
+      Process.exit(temp_producer, :shutdown)
+      :ok
+    else
+      {:error, reason} -> {:error, reason}
+      error -> {:error, error}
+    end
+  end
+
+  @doc """
+  TODO
+  """
+  @spec produce(atom() | pid(), String.t()) :: :ok | {:error, term()}
+  def produce(conn, message) do
+    ctx = generate()
+    payload = construct_payload(message, ctx)
+    Acknowledger.ack(Stargate.Producer.Acknowledger, {:produce, ctx, self()})
+
+    WebSockex.send_frame(__MODULE__, {:text, payload})
+
+    receive do
+      :ack -> :ok
+      err -> err
+    end
+  end
+
+  @doc """
+  TODO
+  """
+  @spec produce(atom() | pid(), String.t(), {atom(), atom(), [term()]}) :: :ok | {:error, term()}
+  def produce(conn, message, mfa) do
+    ctx = generate()
+    payload = construct_payload(message, ctx)
+    Acknowledger.ack(Stargate.Producer.Acknowledger, {:produce, ctx, mfa})
+
+    WebSockex.send_frame(__MODULE__, {:text, payload})
+  end
 
   defmodule State do
     @moduledoc """
     TODO
     """
     defstruct [
+      :registry,
       :url,
       :host,
       :protocol,
@@ -44,17 +94,19 @@ defmodule Stargate.Producer do
   ]
   """
   @spec start_link(keyword()) :: GenServer.on_start()
-  def start_link(opts) do
-    query_params_config = Keyword.get(opts, :query_params)
-    query_params = Stargate.Producer.QueryParams.build_params(query_params_config)
+  def start_link(args) do
+    query_params_config = Keyword.get(args, :query_params)
+    query_params = QueryParams.build_params(query_params_config)
 
     state =
-      opts
+      args
       |> Stargate.Connection.connection_settings("producer", query_params)
       |> Map.put(:query_params, query_params_config)
       |> (fn fields -> struct(State, fields) end).()
 
-    WebSockex.start_link(state.url, __MODULE__, state, name: __MODULE__)
+    WebSockex.start_link(state.url, __MODULE__, state,
+      name: via(state.registry, :"sg_prod_#{state.tenant}_#{state.namespace}_#{state.topic}")
+    )
   end
 
   @impl WebSockex
@@ -69,6 +121,14 @@ defmodule Stargate.Producer do
     {:ok, state}
   end
 
+  defp construct_payload(message, context) do
+    %{
+      "payload" => Base.encode64(message),
+      "context" => context
+    }
+    |> Jason.encode!()
+  end
+
   defp format_response(%{"result" => "ok", "context" => ctx}) do
     {:ack, ctx}
   end
@@ -79,5 +139,5 @@ defmodule Stargate.Producer do
     {:error, reason, ctx}
   end
 
-  defp forward(response), do: GenServer.cast(Stargate.Producer.Acknowledger, response)
+  defp forward(response), do: Acknowledger.ack(Stargate.Producer.Acknowledger, response)
 end
