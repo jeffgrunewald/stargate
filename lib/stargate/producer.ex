@@ -13,7 +13,7 @@ defmodule Stargate.Producer do
   """
   @spec produce(String.t(), String.t()) :: :ok | {:error, term()}
   def produce(url, message) when is_binary(url) and is_binary(message) do
-    payload = construct_payload(message)
+    payload = construct_payload(message, "no_ack")
 
     with {:ok, temp_producer} <- WebSockex.start(url, __MODULE__, %{}),
          :ok <- produce(temp_producer, payload) do
@@ -29,12 +29,12 @@ defmodule Stargate.Producer do
   TODO
   """
   @spec produce(atom() | pid(), String.t()) :: :ok | {:error, term()}
-  def produce(conn, message) do
+  def produce(producer, message) do
     ctx = generate()
     payload = construct_payload(message, ctx)
     Acknowledger.ack(Stargate.Producer.Acknowledger, {:produce, ctx, self()})
 
-    WebSockex.send_frame(__MODULE__, {:text, payload})
+    WebSockex.send_frame(producer, {:text, payload})
 
     receive do
       :ack -> :ok
@@ -46,12 +46,12 @@ defmodule Stargate.Producer do
   TODO
   """
   @spec produce(atom() | pid(), String.t(), {atom(), atom(), [term()]}) :: :ok | {:error, term()}
-  def produce(conn, message, mfa) do
+  def produce(producer, message, mfa) do
     ctx = generate()
     payload = construct_payload(message, ctx)
     Acknowledger.ack(Stargate.Producer.Acknowledger, {:produce, ctx, mfa})
 
-    WebSockex.send_frame(__MODULE__, {:text, payload})
+    WebSockex.send_frame(producer, {:text, payload})
   end
 
   defmodule State do

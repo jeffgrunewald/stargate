@@ -9,7 +9,7 @@ defmodule Stargate.Supervisor do
   """
   @spec via(atom(), atom()) :: pid()
   def via(registry, name) do
-    {:via, Registry, {registry_name(registry), name}}
+    {:via, Registry, {:"sg_reg_#{registry}", name}}
   end
 
   @doc """
@@ -30,9 +30,9 @@ defmodule Stargate.Supervisor do
     children =
       [
         {Registry, name: registry},
-        start_producer(registry, Keyword.get(args, :producer))
-        # start_consumer(),
-        # start_reader()
+        start_producer(registry, Keyword.get(args, :producer)),
+        start_consumer(registry, Keyword.get(args, :consumer)),
+        start_reader(registry, Keyword.get(args, :reader))
       ]
       |> List.flatten()
 
@@ -48,12 +48,12 @@ defmodule Stargate.Supervisor do
     end
   end
 
-  defp start_consumer(_init_args, nil), do: []
+  defp start_consumer(_registry, nil), do: []
 
-  defp start_reader(_init_args, nil), do: []
+  defp start_reader(_registry, nil), do: []
 
   defp producer_child_spec(registry, args) do
-    producer_args = Keyword.put(:registry, registry)
+    producer_args = Keyword.put(args, :registry, registry)
 
     {Stargate.Producer.Supervisor, producer_args}
   end
