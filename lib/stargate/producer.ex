@@ -8,6 +8,8 @@ defmodule Stargate.Producer do
   import Stargate.Supervisor
   alias Stargate.Producer.{Acknowledger, QueryParams}
 
+  @type producer :: GenServer.server()
+
   @doc """
   TODO
   """
@@ -28,13 +30,12 @@ defmodule Stargate.Producer do
   @doc """
   TODO
   """
-  @spec produce(atom() | pid(), String.t()) :: :ok | {:error, term()}
+  @spec produce(producer(), String.t()) :: :ok | {:error, term()}
   def produce(producer, message) do
     ctx = generate()
     payload = construct_payload(message, ctx)
-    Acknowledger.ack(Stargate.Producer.Acknowledger, {:produce, ctx, self()})
 
-    WebSockex.send_frame(producer, {:text, payload})
+    WebSockex.cast(producer, {:send, payload, ctx, self()})
 
     receive do
       :ack -> :ok
@@ -45,13 +46,12 @@ defmodule Stargate.Producer do
   @doc """
   TODO
   """
-  @spec produce(atom() | pid(), String.t(), {atom(), atom(), [term()]}) :: :ok | {:error, term()}
+  @spec produce(producer(), String.t(), {atom(), atom(), [term()]}) :: :ok | {:error, term()}
   def produce(producer, message, mfa) do
     ctx = generate()
     payload = construct_payload(message, ctx)
-    Acknowledger.ack(Stargate.Producer.Acknowledger, {:produce, ctx, mfa})
 
-    WebSockex.send_frame(producer, {:text, payload})
+    WebSockex.cast(producer, {:send, payload, ctx, mfa})
   end
 
   defmodule State do
@@ -97,11 +97,13 @@ defmodule Stargate.Producer do
   def start_link(args) do
     query_params_config = Keyword.get(args, :query_params)
     query_params = QueryParams.build_params(query_params_config)
+    registry = Keyword.fetch!(args, :registry)
 
     state =
       args
       |> Stargate.Connection.connection_settings("producer", query_params)
       |> Map.put(:query_params, query_params_config)
+      |> Map.put(:registry, registry)
       |> (fn fields -> struct(State, fields) end).()
 
     WebSockex.start_link(state.url, __MODULE__, state,
@@ -110,13 +112,29 @@ defmodule Stargate.Producer do
   end
 
   @impl WebSockex
+  def handle_cast({:send, payload, ctx, ack}, state) do
+    Acknowledger.produce(
+      via(state.registry, :"sg_ack_#{state.tenant}_#{state.namespace}_#{state.topic}"),
+      ctx,
+      ack
+    )
+
+    {:reply, {:text, payload}, state}
+  end
+
+  @impl WebSockex
   def handle_frame({:text, msg}, state) do
     Logger.debug("Received response : #{inspect(msg)}")
 
-    msg
-    |> Jason.decode!()
-    |> format_response()
-    |> forward()
+    response =
+      msg
+      |> Jason.decode!()
+      |> format_response()
+
+    :ok =
+      state.registry
+      |> via(:"sg_ack_#{state.tenant}_#{state.namespace}_#{state.topic}")
+      |> Acknowledger.ack(response)
 
     {:ok, state}
   end
@@ -138,6 +156,4 @@ defmodule Stargate.Producer do
 
     {:error, reason, ctx}
   end
-
-  defp forward(response), do: Acknowledger.ack(Stargate.Producer.Acknowledger, response)
 end

@@ -9,7 +9,7 @@ defmodule Stargate.Supervisor do
   """
   @spec via(atom(), atom()) :: pid()
   def via(registry, name) do
-    {:via, Registry, {:"sg_reg_#{registry}", name}}
+    {:via, Registry, {registry, name}}
   end
 
   @doc """
@@ -29,7 +29,7 @@ defmodule Stargate.Supervisor do
 
     children =
       [
-        {Registry, name: registry},
+        {Registry, name: registry, keys: :unique},
         start_producer(registry, Keyword.get(args, :producer)),
         start_consumer(registry, Keyword.get(args, :consumer)),
         start_reader(registry, Keyword.get(args, :reader))

@@ -37,8 +37,8 @@ defmodule Stargate.Producer.Supervisor do
   @impl Supervisor
   def init(args) do
     children = [
-      {Stargate.Producer.Acknowledger, [args]},
-      {Stargate.Producer, [args]}
+      {Stargate.Producer.Acknowledger, args},
+      {Stargate.Producer, args}
     ]
 
     Supervisor.init(children, strategy: :one_for_one)

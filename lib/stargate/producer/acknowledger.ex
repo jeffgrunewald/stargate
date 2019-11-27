@@ -15,6 +15,12 @@ defmodule Stargate.Producer.Acknowledger do
   @doc """
   TODO
   """
+  @spec produce(GenServer.server(), String.t(), pid() | tuple()) :: :ok
+  def produce(acknowledger, ctx, ack), do: GenServer.cast(acknowledger, {:produce, ctx, ack})
+
+  @doc """
+  TODO
+  """
   def start_link(args) do
     registry = Keyword.fetch!(args, :registry)
     tenant = Keyword.fetch!(args, :tenant)
