@@ -7,7 +7,7 @@ defmodule Stargate.Supervisor do
   @doc """
   TODO
   """
-  @spec via(atom(), atom()) :: pid()
+  @spec via(atom(), atom()) :: {:via, atom(), tuple()}
   def via(registry, name) do
     {:via, Registry, {registry, name}}
   end

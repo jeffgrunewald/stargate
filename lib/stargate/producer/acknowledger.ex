@@ -9,7 +9,7 @@ defmodule Stargate.Producer.Acknowledger do
   @doc """
   TODO
   """
-  @spec ack(pid(), {:ack, term()} | {:error, term(), term()}) :: :ok
+  @spec ack(GenServer.server(), {:ack, term()} | {:error, term(), term()}) :: :ok
   def ack(acknowledger, response), do: GenServer.cast(acknowledger, response)
 
   @doc """
