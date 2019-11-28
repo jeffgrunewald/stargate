@@ -10,26 +10,9 @@ defmodule Stargate.Producer.QueryParams do
   def build_params(nil), do: ""
 
   def build_params(config) when is_map(config) do
-    routing_mode =
-      case Map.get(config, :routing_mode) do
-        :round_robin -> "RoundRobinPartition"
-        :single -> "SinglePartition"
-        _ -> ""
-      end
-
-    compression_type =
-      case Map.get(config, :compression_type) do
-        :lz4 -> "LZ4"
-        :zlib -> "ZLIB"
-        _ -> "NONE"
-      end
-
-    hashing_scheme =
-      case Map.get(config, :hashing_scheme) do
-        :java_string -> "JavaStringHash"
-        :murmur3 -> "Murmur3_32Hash"
-        _ -> ""
-      end
+    routing_mode = get_param(config, :routing_mode)
+    compression_type = get_param(config, :compression_type)
+    hashing_scheme = get_param(config, :hashing_scheme)
 
     %{
       "sendTimeoutMillis" => Map.get(config, :send_timeout),
@@ -46,5 +29,29 @@ defmodule Stargate.Producer.QueryParams do
     |> Enum.map(fn {key, value} -> key <> "=" <> to_string(value) end)
     |> Enum.filter(fn param -> String.last(param) != "=" end)
     |> Enum.join("&")
+  end
+
+  defp get_param(config, :routing_mode) do
+    case Map.get(config, :routing_mode) do
+      :round_robin -> "RoundRobinPartition"
+      :single -> "SinglePartition"
+      _ -> ""
+    end
+  end
+
+  defp get_param(config, :compression_type) do
+    case Map.get(config, :compression_type) do
+      :lz4 -> "LZ4"
+      :zlib -> "ZLIB"
+      _ -> "NONE"
+    end
+  end
+
+  defp get_param(config, :hashing_scheme) do
+    case Map.get(config, :hashing_scheme) do
+      :java_string -> "JavaStringHash"
+      :murmur3 -> "Murmur3_32Hash"
+      _ -> ""
+    end
   end
 end

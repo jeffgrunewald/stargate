@@ -4,19 +4,39 @@ defmodule Stargate.Producer.Acknowledger do
   """
   require Logger
   use GenServer
+  import Stargate.Supervisor
 
   @doc """
   TODO
   """
-  def start_link(opts) do
-    GenServer.start_link(__MODULE__, opts, name: __MODULE__)
+  @spec ack(GenServer.server(), {:ack, term()} | {:error, term(), term()}) :: :ok
+  def ack(acknowledger, response), do: GenServer.cast(acknowledger, response)
+
+  @doc """
+  TODO
+  """
+  @spec produce(GenServer.server(), String.t(), pid() | tuple()) :: :ok
+  def produce(acknowledger, ctx, ack), do: GenServer.cast(acknowledger, {:produce, ctx, ack})
+
+  @doc """
+  TODO
+  """
+  def start_link(args) do
+    registry = Keyword.fetch!(args, :registry)
+    tenant = Keyword.fetch!(args, :tenant)
+    namespace = Keyword.fetch!(args, :namespace)
+    topic = Keyword.fetch!(args, :topic)
+
+    GenServer.start_link(__MODULE__, args,
+      name: via(registry, :"sg_ack_#{tenant}_#{namespace}_#{topic}")
+    )
   end
 
   @doc """
   TODO
   """
   @impl GenServer
-  def init(_opts) do
+  def init(_args) do
     {:ok, %{}}
   end
 
