@@ -9,6 +9,7 @@ defmodule Stargate.Reader do
     TODO
     """
     defstruct [
+      :registry,
       :url,
       :host,
       :protocol,
@@ -56,13 +57,14 @@ defmodule Stargate.Reader do
 
   @impl WebSockex
   def handle_frame({:text, msg}, state) do
-    msg
-    |> Jason.decode!()
-    |> Stargate.Message.new(state.persistence, state.tenant, state.namespace, state.topic)
-    |> state.handler.handle_messages()
-    |> case do
-      {:ack, id} ->
-        ack = construct_response(id)
+    decoded_message =
+      msg
+      |> Jason.decode!()
+      |> Stargate.Message.new(state.persistence, state.tenant, state.namespace, state.topic)
+
+    case state.handler.handle_messages(decoded_message) do
+      :ack ->
+        ack = construct_response(decoded_message.message_id)
         WebSockex.send_frame(self(), {:text, ack})
 
       :continue ->
@@ -72,8 +74,5 @@ defmodule Stargate.Reader do
     {:ok, state}
   end
 
-  defp construct_response(id) do
-    %{"messageId" => id}
-    |> Jason.encode!()
-  end
+  defp construct_response(id), do: "{\"messageId\":\"#{id}\"}"
 end
