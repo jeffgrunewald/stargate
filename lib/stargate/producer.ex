@@ -5,7 +5,7 @@ defmodule Stargate.Producer do
   require Logger
   use Stargate.Connection
   use Puid
-  import Stargate.Supervisor
+  import Stargate.Supervisor, only: [via: 2]
   alias Stargate.Producer.{Acknowledger, QueryParams}
 
   @type producer :: GenServer.server()

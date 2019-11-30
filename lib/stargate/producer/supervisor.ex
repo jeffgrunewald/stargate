@@ -3,7 +3,7 @@ defmodule Stargate.Producer.Supervisor do
   TODO
   """
   use Supervisor
-  import Stargate.Supervisor
+  import Stargate.Supervisor, only: [via: 2]
 
   @doc """
   TODO

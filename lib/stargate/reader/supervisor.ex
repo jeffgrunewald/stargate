@@ -3,20 +3,35 @@ defmodule Stargate.Reader.Supervisor do
   TODO
   """
   use Supervisor
+  import Stargate.Supervisor, only: [via: 2]
 
   @doc """
   TODO
   """
   @spec start_link(keyword()) :: GenServer.on_start()
-  def start_link(_args) do
-    Supervisor.start_link(__MODULE__, [], name: __MODULE__)
+  def start_link(args) do
+    registry = Keyword.fetch!(args, :registry)
+    tenant = Keyword.fetch!(args, :tenant)
+    namespace = Keyword.fetch!(args, :namespace)
+    topic = Keyword.fetch!(args, :topic)
+
+    Supervisor.start_link(__MODULE__, args,
+      name: via(registry, :"sg_read_sup_#{tenant}_#{namespace}_#{topic}")
+    )
   end
 
   @doc """
   TODO
   """
   @impl Supervisor
-  def init(_args) do
-    :ignore
+  def init(args) do
+    registry = Keyword.fetch!(args, :registry)
+
+    children = [
+      {DynamicSupervisor, [strategy: :one_for_one, name: via(registry, :sg_worker_sup)]},
+      {Stargate.Reader, args}
+    ]
+
+    Supervisor.init(children, strategy: :one_for_all)
   end
 end

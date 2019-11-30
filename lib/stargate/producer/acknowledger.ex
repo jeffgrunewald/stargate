@@ -4,7 +4,7 @@ defmodule Stargate.Producer.Acknowledger do
   """
   require Logger
   use GenServer
-  import Stargate.Supervisor
+  import Stargate.Supervisor, only: [via: 2]
 
   @doc """
   TODO

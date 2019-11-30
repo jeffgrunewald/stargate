@@ -42,7 +42,8 @@ defmodule Stargate.MixProject do
   defp test_paths(:integration), do: ["test/integration"]
   defp test_paths(_), do: ["test/unit"]
 
-  defp description(), do: "An Apache Pulsar client written in Elixir using the Pulsar websocket API."
+  defp description(),
+    do: "An Apache Pulsar client written in Elixir using the Pulsar websocket API."
 
   defp package() do
     [

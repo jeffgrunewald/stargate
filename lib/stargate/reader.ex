@@ -4,6 +4,18 @@ defmodule Stargate.Reader do
   """
   use Stargate.Connection
 
+  @type message_id :: String.t()
+
+  @doc """
+  TODO
+  """
+  @spec ack(GenServer.server(), message_id()) :: :ok | {:error, term()}
+  def ack(receiver, message_id) do
+    ack = construct_response(message_id)
+
+    WebSockex.send_frame(receiver, {:text, ack})
+  end
+
   defmodule State do
     @moduledoc """
     TODO
@@ -18,6 +30,7 @@ defmodule Stargate.Reader do
       :namespace,
       :topic,
       :handler,
+      :handler_init_args,
       :query_params
     ]
   end
