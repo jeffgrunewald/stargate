@@ -43,7 +43,9 @@ defmodule Stargate.Reader do
     tenant: "public",
     namespace: "default",
     topic: "foo",
+    workers: 3,                     optional \\ 1
     handler: MyApp.Reader.Handler,
+    handler_init_args: []          optional \\ []
     query_params: %{                optional
       reader_name: "myapp-reader,
       queue_size: 1_000,              \\ 1_000
@@ -53,19 +55,21 @@ defmodule Stargate.Reader do
   """
 
   @spec start_link(keyword()) :: GenServer.on_start()
-  def start_link(opts) do
-    handler = Keyword.fetch!(opts, :handler)
-    query_params_config = Keyword.get(opts, :query_params)
+  def start_link(args) do
+    registry = Keyword.fetch!(args, :registry)
+    query_params_config = Keyword.get(args, :query_params)
     query_params = Stargate.Reader.QueryParams.build_params(query_params_config)
 
     state =
-      opts
+      args
       |> Stargate.Connection.connection_settings("reader", query_params)
-      |> Map.put(:handler, handler)
       |> Map.put(:query_params, query_params_config)
+      |> Map.put(:registry, registry)
       |> (fn fields -> struct(State, fields) end).()
 
-    WebSockex.start_link(state.url, __MODULE__, state)
+    WebSockex.start_link(state.url, __MODULE__, state,
+      name: via(state.registry, :"sg_read_#{state.tenant}_#{state.namespace}_#{state.topic}")
+    )
   end
 
   @impl WebSockex
