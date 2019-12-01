@@ -16,6 +16,16 @@ defmodule Stargate.Reader do
     WebSockex.send_frame(receiver, {:text, ack})
   end
 
+  @spec register_workers(GenServer.server(), [pid()]) :: :ok | {:error, term()}
+  def register_workers(receiver, workers) do
+    send(receiver, {:register_workers, workers, self()})
+
+    receive do
+      :ok -> :ok
+      _ -> raise RuntimeError, message: "Unable to register receiver workers"
+    end
+  end
+
   defmodule State do
     @moduledoc """
     TODO
@@ -29,27 +39,26 @@ defmodule Stargate.Reader do
       :tenant,
       :namespace,
       :topic,
-      :handler,
-      :handler_init_args,
-      :query_params
+      :query_params,
+      :workers
     ]
   end
 
   @doc """
   config = [
     host: [localhost: 8080],
-    protocol: "ws",                 optional \\ ws
-    persistence: "persistent",      optional \\ persistent
+    protocol: "ws",                optional \\ ws
+    persistence: "persistent",     optional \\ persistent
     tenant: "public",
     namespace: "default",
     topic: "foo",
-    workers: 3,                     optional \\ 1
+    worker_count: 3,               optional \\ 1
     handler: MyApp.Reader.Handler,
     handler_init_args: []          optional \\ []
-    query_params: %{                optional
+    query_params: %{               optional
       reader_name: "myapp-reader,
-      queue_size: 1_000,              \\ 1_000
-      starting_message: :latest       \\ :latest
+      queue_size: 1_000,             \\ 1_000
+      starting_message: :latest      \\ :latest
     }
   ]
   """
@@ -89,6 +98,13 @@ defmodule Stargate.Reader do
     end
 
     {:ok, state}
+  end
+
+  @impl WebSockex
+  def handle_info({:register_workers, workers, mgr}, state) do
+    send(mgr, :ok)
+
+    {:ok, %{state | workers: workers}}
   end
 
   defp construct_response(id), do: "{\"messageId\":\"#{id}\"}"

@@ -29,6 +29,7 @@ defmodule Stargate.Reader.Supervisor do
 
     children = [
       {DynamicSupervisor, [strategy: :one_for_one, name: via(registry, :sg_worker_sup)]},
+      {Stargate.Receiver.WorkerManager, args},
       {Stargate.Reader, args}
     ]
 

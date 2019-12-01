@@ -13,7 +13,6 @@ defmodule Stargate.Receiver.Worker do
     defstruct [
       :registry,
       :receiver,
-      :id,
       :topic,
       :namespace,
       :tenant,
@@ -41,7 +40,6 @@ defmodule Stargate.Receiver.Worker do
     state = %State{
       registry: Keyword.fetch!(args, :registry),
       receiver: Keyword.fetch!(args, :receiver),
-      id: Keyword.fetch!(args, :id),
       topic: Keyword.fetch!(args, :topic),
       namespace: Keyword.fetch!(args, :namespace),
       tenant: Keyword.fetch!(args, :tenant),
@@ -54,12 +52,6 @@ defmodule Stargate.Receiver.Worker do
     Process.put(:sg_namespace, state.namespace)
     Process.put(:sg_tenant, state.tenant)
     Process.put(:sg_persistence, state.persistence)
-
-    Registry.register(
-      state.registry,
-      :"sg_worker_#{state.tenant}_#{state.namespace}_#{state.topic}_#{state.id}",
-      self()
-    )
 
     {:ok, handler_state} = state.handler.init(state.handler_init_args)
 
