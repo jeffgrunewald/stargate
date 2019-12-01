@@ -4,14 +4,14 @@ defmodule Stargate.Connection do
   """
 
   @type connection_settings :: %{
-    url: String.t(),
-    host: String.t(),
-    protocol: String.t(),
-    persistence: String.t(),
-    tenant: String.t(),
-    namespace: String.t(),
-    topic: String.t()
-  }
+          url: String.t(),
+          host: String.t(),
+          protocol: String.t(),
+          persistence: String.t(),
+          tenant: String.t(),
+          namespace: String.t(),
+          topic: String.t()
+        }
 
   @doc """
   TODO
