@@ -5,17 +5,27 @@ defmodule Stargate.Producer do
   require Logger
   use Stargate.Connection
   use Puid
-  import Stargate.Supervisor
+  import Stargate.Supervisor, only: [via: 2]
   alias Stargate.Producer.{Acknowledger, QueryParams}
 
   @type producer :: GenServer.server()
+  @type message ::
+          String.t()
+          | {String.t(), String.t()}
+          | %{
+              required(:payload) => String.t(),
+              optional(:key) => String.t(),
+              optional(:context) => String.t(),
+              optional(:properties) => map(),
+              optional(:replicationClusters) => [String.t()]
+            }
 
   @doc """
   TODO
   """
-  @spec produce(String.t(), String.t()) :: :ok | {:error, term()}
+  @spec produce(String.t(), message()) :: :ok | {:error, term()}
   def produce(url, message) when is_binary(url) and is_binary(message) do
-    payload = construct_payload(message, "no_ack")
+    payload = construct_payload(message)
 
     with {:ok, temp_producer} <- WebSockex.start(url, __MODULE__, %{}),
          :ok <- produce(temp_producer, payload) do
@@ -30,10 +40,17 @@ defmodule Stargate.Producer do
   @doc """
   TODO
   """
-  @spec produce(producer(), String.t()) :: :ok | {:error, term()}
+  @spec produce(producer(), [message()]) :: :ok | {:error, term()}
+  def produce(producer, messages) when is_list(messages) do
+    Enum.each(messages, &produce(producer, &1))
+  end
+
+  @doc """
+  TODO
+  """
+  @spec produce(producer(), message()) :: :ok | {:error, term()}
   def produce(producer, message) do
-    ctx = generate()
-    payload = construct_payload(message, ctx)
+    {payload, ctx} = construct_payload(message)
 
     WebSockex.cast(producer, {:send, payload, ctx, self()})
 
@@ -46,10 +63,17 @@ defmodule Stargate.Producer do
   @doc """
   TODO
   """
-  @spec produce(producer(), String.t(), {atom(), atom(), [term()]}) :: :ok | {:error, term()}
+  @spec produce(producer(), [message()], {module(), atom(), [term()]}) :: :ok | {:error, term()}
+  def produce(producer, messages, mfa) when is_list(messages) do
+    Enum.each(messages, &produce(producer, &1, mfa))
+  end
+
+  @doc """
+  TODO
+  """
+  @spec produce(producer(), message(), {module(), atom(), [term()]}) :: :ok | {:error, term()}
   def produce(producer, message, mfa) do
-    ctx = generate()
-    payload = construct_payload(message, ctx)
+    {payload, ctx} = construct_payload(message)
 
     WebSockex.cast(producer, {:send, payload, ctx, mfa})
   end
@@ -139,12 +163,52 @@ defmodule Stargate.Producer do
     {:ok, state}
   end
 
-  defp construct_payload(message, context) do
-    %{
-      "payload" => Base.encode64(message),
-      "context" => context
-    }
-    |> Jason.encode!()
+  defp construct_payload(%{payload: _payload, context: context} = message) do
+    encoded_message =
+      message
+      |> Map.update!("payload", &Base.encode64(&1))
+      |> Jason.encode!()
+
+    {encoded_message, context}
+  end
+
+  defp construct_payload(%{payload: _payload} = message) do
+    context = generate()
+
+    encoded_message =
+      message
+      |> Map.put("context", context)
+      |> Map.update!("payload", &Base.encode64(&1))
+      |> Jason.encode!()
+
+    {encoded_message, context}
+  end
+
+  defp construct_payload({key, payload}) do
+    context = generate()
+
+    encoded_message =
+      %{
+        "key" => key,
+        "payload" => Base.encode64(payload),
+        "context" => context
+      }
+      |> Jason.encode!()
+
+    {encoded_message, context}
+  end
+
+  defp construct_payload(message) when is_binary(message) do
+    context = generate()
+
+    encoded_message =
+      %{
+        "payload" => Base.encode64(message),
+        "context" => context
+      }
+      |> Jason.encode!()
+
+    {encoded_message, context}
   end
 
   defp format_response(%{"result" => "ok", "context" => ctx}) do

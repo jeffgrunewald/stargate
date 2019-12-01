@@ -30,7 +30,7 @@ defmodule Stargate.MixProject do
       {:divo, "~> 1.1", only: [:dev, :integration]},
       {:divo_pulsar, "~> 0.1.0", only: [:dev, :integration]},
       {:jason, "~> 1.1"},
-      {:mojito, "~> 0.5.0"},
+      {:mojito, "~> 0.6.0"},
       {:puid, "~> 1.0"},
       {:websockex, "~> 0.4.0"}
     ]
@@ -42,7 +42,8 @@ defmodule Stargate.MixProject do
   defp test_paths(:integration), do: ["test/integration"]
   defp test_paths(_), do: ["test/unit"]
 
-  defp description(), do: "An Apache Pulsar client written in Elixir."
+  defp description(),
+    do: "An Apache Pulsar client written in Elixir using the Pulsar websocket API."
 
   defp package() do
     [
