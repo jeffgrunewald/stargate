@@ -3,10 +3,19 @@ defmodule Stargate.Connection do
   TODO
   """
 
+  @type connection_settings :: %{
+    url: String.t(),
+    host: String.t(),
+    protocol: String.t(),
+    persistence: String.t(),
+    tenant: String.t(),
+    namespace: String.t(),
+    topic: String.t()
+  }
+
   @doc """
   TODO
   """
-
   defmacro __using__(_opts) do
     quote do
       use WebSockex
@@ -34,6 +43,10 @@ defmodule Stargate.Connection do
     end
   end
 
+  @doc """
+  TODO
+  """
+  @spec connection_settings(keyword(), String.t(), String.t()) :: connection_settings()
   def connection_settings(opts, type, params) do
     host = Keyword.fetch!(opts, :host) |> format_host()
     protocol = Keyword.get(opts, :protocol, "ws")

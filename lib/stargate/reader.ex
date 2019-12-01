@@ -3,6 +3,7 @@ defmodule Stargate.Reader do
   TODO
   """
   use Stargate.Connection
+  import Stargate.Supervisor, only: [via: 2]
 
   @type message_id :: String.t()
 
@@ -16,7 +17,10 @@ defmodule Stargate.Reader do
     WebSockex.send_frame(receiver, {:text, ack})
   end
 
-  @spec register_workers(GenServer.server(), [pid()]) :: :ok | {:error, term()}
+  @doc """
+  TODO
+  """
+  @spec register_workers(GenServer.server(), [pid()]) :: :ok
   def register_workers(receiver, workers) do
     send(receiver, {:register_workers, workers, self()})
 
@@ -40,7 +44,12 @@ defmodule Stargate.Reader do
       :namespace,
       :topic,
       :query_params,
-      :workers
+      :process_queue_len,
+      :process_queue_delay,
+      :process_queue,
+      :process_queue_ts,
+      :workers,
+      :worker_index
     ]
   end
 
@@ -53,6 +62,8 @@ defmodule Stargate.Reader do
     namespace: "default",
     topic: "foo",
     worker_count: 3,               optional \\ 1
+    process_queue_len: 10          optional \\ 10
+    process_queue_delay: 5_000     optional \\ 5_000
     handler: MyApp.Reader.Handler,
     handler_init_args: []          optional \\ []
     query_params: %{               optional
@@ -69,11 +80,20 @@ defmodule Stargate.Reader do
     query_params_config = Keyword.get(args, :query_params)
     query_params = Stargate.Reader.QueryParams.build_params(query_params_config)
 
+    setup_state = %{
+      registry: registry,
+      query_params: query_params_config,
+      worker_index: 0,
+      process_queue_len: Keyword.get(args, :process_queue_len, 10),
+      process_queue_delay: Keyword.get(args, :process_queue_delay, 5_000),
+      process_queue: [],
+      process_queue_ts: :erlang.system_time()
+    }
+
     state =
       args
       |> Stargate.Connection.connection_settings("reader", query_params)
-      |> Map.put(:query_params, query_params_config)
-      |> Map.put(:registry, registry)
+      |> Map.merge(setup_state)
       |> (fn fields -> struct(State, fields) end).()
 
     WebSockex.start_link(state.url, __MODULE__, state,
@@ -82,22 +102,31 @@ defmodule Stargate.Reader do
   end
 
   @impl WebSockex
-  def handle_frame({:text, msg}, state) do
-    decoded_message =
-      msg
-      |> Jason.decode!()
-      |> Stargate.Message.new(state.persistence, state.tenant, state.namespace, state.topic)
+  def handle_frame(
+        {:text, msg},
+        %{
+          process_queue: queue,
+          process_queue_len: length,
+          process_queue_ts: timestamp,
+          process_queue_delay: delay
+        } = state
+      ) do
+    case process_messages?(queue, length, timestamp, delay) do
+      {false, false} ->
+        {:ok, %{state | process_queue: [msg | queue]}}
 
-    case state.handler.handle_messages(decoded_message) do
-      :ack ->
-        ack = construct_response(decoded_message.message_id)
-        WebSockex.send_frame(self(), {:text, ack})
+      {_, _} ->
+        {worker, new_index} = current_and_next_worker(state.workers, state.worker_index)
+        Stargate.Receiver.Worker.process(worker, Enum.reverse([msg | queue]))
 
-      :continue ->
-        :continue
+        {:ok,
+         %{
+           state
+           | process_queue: [],
+             worker_index: new_index,
+             process_queue_ts: :erlang.system_time()
+         }}
     end
-
-    {:ok, state}
   end
 
   @impl WebSockex
@@ -108,4 +137,12 @@ defmodule Stargate.Reader do
   end
 
   defp construct_response(id), do: "{\"messageId\":\"#{id}\"}"
+
+  defp current_and_next_worker(workers, index) do
+    {Enum.at(workers, index), rem(index + 1, Enum.count(workers))}
+  end
+
+  defp process_messages?(queue, length, timestamp, delay) do
+    {Enum.count(queue) + 1 == length, :erlang.system_time() - timestamp >= delay}
+  end
 end

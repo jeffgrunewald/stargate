@@ -21,6 +21,7 @@ defmodule Stargate.Producer.Acknowledger do
   @doc """
   TODO
   """
+  @spec start_link(keyword()) :: GenServer.on_start()
   def start_link(args) do
     registry = Keyword.fetch!(args, :registry)
     tenant = Keyword.fetch!(args, :tenant)

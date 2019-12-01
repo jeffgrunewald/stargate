@@ -7,6 +7,9 @@ defmodule Stargate.Receiver.WorkerManager do
   import Stargate.Supervisor, only: [via: 2]
 
   defmodule State do
+    @moduledoc """
+    TODO
+    """
     defstruct [
       :init_args,
       :registry,
@@ -19,6 +22,10 @@ defmodule Stargate.Receiver.WorkerManager do
     ]
   end
 
+  @doc """
+  TODO
+  """
+  @spec start_link(keyword()) :: GenServer.on_start()
   def start_link(args) do
     registry = Keyword.fetch!(args, :registry)
     tenant = Keyword.fetch!(args, :tenant)
@@ -71,7 +78,7 @@ defmodule Stargate.Receiver.WorkerManager do
         Map.values(workers)
       )
 
-    {:ok, %{state | receiver: receiver, workers: workers}}
+    {:noreply, %{state | receiver: receiver, workers: workers}}
   end
 
   @impl GenServer
@@ -83,7 +90,7 @@ defmodule Stargate.Receiver.WorkerManager do
 
     :ok = Stargate.Reader.register_workers(receiver, Map.values(new_workers))
 
-    {:ok, %{state | workers: new_workers}}
+    {:noreply, %{state | workers: new_workers}}
   end
 
   defp start_worker(workers, registry, args) do
