@@ -13,11 +13,11 @@ defmodule Stargate.Producer do
           String.t()
           | {String.t(), String.t()}
           | %{
-              required("payload") => String.t(),
-              optional("key") => String.t(),
-              optional("context") => String.t(),
-              optional("properties") => map(),
-              optional("replicationClusters") => [String.t()]
+              required(:payload) => String.t(),
+              optional(:key) => String.t(),
+              optional(:context) => String.t(),
+              optional(:properties) => map(),
+              optional(:replicationClusters) => [String.t()]
             }
 
   @doc """
@@ -163,7 +163,7 @@ defmodule Stargate.Producer do
     {:ok, state}
   end
 
-  defp construct_payload(%{"payload" => _payload, "context" => context} = message) do
+  defp construct_payload(%{payload: _payload, context: context} = message) do
     encoded_message =
       message
       |> Map.update!("payload", &Base.encode64(&1))
@@ -172,7 +172,7 @@ defmodule Stargate.Producer do
     {encoded_message, context}
   end
 
-  defp construct_payload(%{"payload" => _payload} = message) do
+  defp construct_payload(%{payload: _payload} = message) do
     context = generate()
 
     encoded_message =
