@@ -125,7 +125,7 @@ defmodule Stargate.Producer do
 
     state =
       args
-      |> Stargate.Connection.connection_settings("producer", query_params)
+      |> Stargate.Connection.connection_settings(:producer, query_params)
       |> Map.put(:query_params, query_params_config)
       |> Map.put(:registry, registry)
       |> (fn fields -> struct(State, fields) end).()

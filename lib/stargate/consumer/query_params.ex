@@ -13,10 +13,11 @@ defmodule Stargate.Consumer.QueryParams do
     subscription_type =
       case Map.get(config, :subscription_type) do
         :exclusive -> "Exclusive"
-          :failover -> "Failover"
-          :shared -> "Shared"
-          _ -> ""
+        :failover -> "Failover"
+        :shared -> "Shared"
+        _ -> ""
       end
+
     %{
       "ackTimeoutMillis" => Map.get(config, :ack_timeout),
       "subscriptionType" => subscription_type,

@@ -30,7 +30,8 @@ defmodule Stargate.Receiver.Supervisor do
     type = Keyword.fetch!(args, :type)
 
     children = [
-      {DynamicSupervisor, [strategy: :one_for_one, name: via(registry, :"sg_#{type}_worker_sup")]},
+      {DynamicSupervisor,
+       [strategy: :one_for_one, name: via(registry, :"sg_#{type}_worker_sup")]},
       {Stargate.Receiver.WorkerManager, args},
       {Stargate.Receiver, args}
     ]

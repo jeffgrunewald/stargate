@@ -25,7 +25,7 @@ defmodule Stargate.Receiver do
   def pull_permit(receiver, count) do
     permit = construct_permit(count)
 
-    WebSockex.send_frame(receiver, {:text}, permit)
+    WebSockex.send_frame(receiver, {:text, permit})
   end
 
   @doc """
@@ -90,6 +90,7 @@ defmodule Stargate.Receiver do
     type = Keyword.fetch!(args, :type)
     registry = Keyword.fetch!(args, :registry)
     query_params_config = Keyword.get(args, :query_params)
+
     query_params =
       case type do
         :consumer -> Consumer.QueryParams.build_params(query_params_config)
