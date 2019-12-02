@@ -1,9 +1,10 @@
-defmodule Stargate.Reader do
+defmodule Stargate.Receiver do
   @moduledoc """
   TODO
   """
   use Stargate.Connection
   import Stargate.Supervisor, only: [via: 2]
+  alias Stargate.{Consumer, Reader}
 
   @type message_id :: String.t()
 
@@ -15,6 +16,16 @@ defmodule Stargate.Reader do
     ack = construct_response(message_id)
 
     WebSockex.send_frame(receiver, {:text, ack})
+  end
+
+  @doc """
+  TODO
+  """
+  @spec pull_permit(GenServer.server(), non_neg_integer()) :: :ok | {:error, term()}
+  def pull_permit(receiver, count) do
+    permit = construct_permit(count)
+
+    WebSockex.send_frame(receiver, {:text, permit})
   end
 
   @doc """
@@ -76,9 +87,15 @@ defmodule Stargate.Reader do
 
   @spec start_link(keyword()) :: GenServer.on_start()
   def start_link(args) do
+    type = Keyword.fetch!(args, :type)
     registry = Keyword.fetch!(args, :registry)
     query_params_config = Keyword.get(args, :query_params)
-    query_params = Stargate.Reader.QueryParams.build_params(query_params_config)
+
+    query_params =
+      case type do
+        :consumer -> Consumer.QueryParams.build_params(query_params_config)
+        :reader -> Reader.QueryParams.build_params(query_params_config)
+      end
 
     setup_state = %{
       registry: registry,
@@ -92,12 +109,12 @@ defmodule Stargate.Reader do
 
     state =
       args
-      |> Stargate.Connection.connection_settings("reader", query_params)
+      |> Stargate.Connection.connection_settings(type, query_params)
       |> Map.merge(setup_state)
       |> (fn fields -> struct(State, fields) end).()
 
     WebSockex.start_link(state.url, __MODULE__, state,
-      name: via(state.registry, :"sg_read_#{state.tenant}_#{state.namespace}_#{state.topic}")
+      name: via(state.registry, :"sg_#{type}_#{state.tenant}_#{state.namespace}_#{state.topic}")
     )
   end
 
@@ -137,6 +154,8 @@ defmodule Stargate.Reader do
   end
 
   defp construct_response(id), do: "{\"messageId\":\"#{id}\"}"
+
+  defp construct_permit(count), do: "{\"type\":\"permit\",\"permitMessages\":#{count}}"
 
   defp current_and_next_worker(workers, index) do
     {Enum.at(workers, index), rem(index + 1, Enum.count(workers))}

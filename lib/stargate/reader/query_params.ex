@@ -19,7 +19,7 @@ defmodule Stargate.Reader.QueryParams do
       end
 
     %{
-      "readerName" => Map.get(config, :reader_name),
+      "readerName" => Map.get(config, :name),
       "receiverQueueSize" => Map.get(config, :queue_size),
       "messageId" => starting_message
     }

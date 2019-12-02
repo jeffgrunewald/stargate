@@ -46,7 +46,7 @@ defmodule Stargate.Connection do
   @doc """
   TODO
   """
-  @spec connection_settings(keyword(), String.t(), String.t()) :: connection_settings()
+  @spec connection_settings(keyword(), atom(), String.t()) :: connection_settings()
   def connection_settings(opts, type, params) do
     host = Keyword.fetch!(opts, :host) |> format_host()
     protocol = Keyword.get(opts, :protocol, "ws")

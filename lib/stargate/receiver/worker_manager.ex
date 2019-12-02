@@ -73,7 +73,7 @@ defmodule Stargate.Receiver.WorkerManager do
       )
 
     :ok =
-      Stargate.Reader.register_workers(
+      Stargate.Receiver.register_workers(
         receiver,
         Map.values(workers)
       )
@@ -88,7 +88,7 @@ defmodule Stargate.Receiver.WorkerManager do
       |> Map.delete(ref)
       |> start_worker(state.registry, Keyword.put(state.init_args, :receiver, receiver))
 
-    :ok = Stargate.Reader.register_workers(receiver, Map.values(new_workers))
+    :ok = Stargate.Receiver.register_workers(receiver, Map.values(new_workers))
 
     {:noreply, %{state | workers: new_workers}}
   end

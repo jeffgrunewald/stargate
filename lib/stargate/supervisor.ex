@@ -26,35 +26,59 @@ defmodule Stargate.Supervisor do
   def init(args) do
     name = Keyword.fetch!(args, :name)
     registry = :"sg_reg_#{name}"
+    host = Keyword.fetch!(args, :host)
+    protocol = Keyword.get(args, :protocol, "ws")
 
     children =
       [
         {Registry, name: registry, keys: :unique},
-        start_producer(registry, Keyword.get(args, :producer)),
-        start_consumer(registry, Keyword.get(args, :consumer)),
-        start_reader(registry, Keyword.get(args, :reader))
+        start_producer(registry, host, protocol, Keyword.get(args, :producer)),
+        start_consumer(registry, host, protocol, Keyword.get(args, :consumer)),
+        start_reader(registry, host, protocol, Keyword.get(args, :reader))
       ]
       |> List.flatten()
 
     Supervisor.init(children, strategy: :rest_for_one)
   end
 
-  defp start_producer(_registry, nil), do: []
+  defp start_producer(_registry, _host, _protocol, nil), do: []
 
-  defp start_producer(registry, args) do
+  defp start_producer(registry, host, protocol, args) do
     case Keyword.keyword?(args) do
-      true -> producer_child_spec(registry, args)
-      false -> Enum.map(args, fn producer -> producer_child_spec(registry, producer) end)
+      true ->
+        producer_child_spec(registry, host, protocol, args)
+
+      false ->
+        Enum.map(args, fn producer -> producer_child_spec(registry, host, protocol, producer) end)
     end
   end
 
-  defp start_consumer(_registry, nil), do: []
+  defp start_consumer(_registry, _host, _protocol, nil), do: []
 
-  defp start_reader(_registry, nil), do: []
+  defp start_consumer(registry, host, protocol, args) do
+    receiver_child_spec(:consumer, registry, host, protocol, args)
+  end
 
-  defp producer_child_spec(registry, args) do
-    producer_args = Keyword.put(args, :registry, registry)
+  defp start_reader(_registry, _host, _protocol, nil), do: []
+
+  defp start_reader(registry, host, protocol, args) do
+    receiver_child_spec(:reader, registry, host, protocol, args)
+  end
+
+  defp producer_child_spec(registry, host, protocol, args) do
+    producer_args = merge_args(args, host: host, protocol: protocol, registry: registry)
 
     {Stargate.Producer.Supervisor, producer_args}
+  end
+
+  defp receiver_child_spec(type, registry, host, protocol, args) do
+    receiver_args =
+      merge_args(args, type: type, registry: registry, host: host, protocol: protocol)
+
+    {Stargate.Receiver.Supervisor, receiver_args}
+  end
+
+  defp merge_args(args1, args2) do
+    Keyword.merge(args1, args2, fn _k, _v1, v2 -> v2 end)
   end
 end

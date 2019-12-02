@@ -86,6 +86,6 @@ defmodule Stargate.Receiver.Worker do
   end
 
   defp ack_messages(messages, receiver) do
-    Enum.each(messages, &Stargate.Reader.ack(receiver, &1))
+    Enum.each(messages, &Stargate.Receiver.ack(receiver, &1))
   end
 end
