@@ -56,25 +56,26 @@ defmodule Stargate.Supervisor do
   defp start_consumer(_registry, _host, _protocol, nil), do: []
 
   defp start_consumer(registry, host, protocol, args) do
-    consumer_args =
-      merge_args(args, type: :consumer, host: host, protocol: protocol, registry: registry)
-
-    {Stargate.Receiver.Supervisor, consumer_args}
+    receiver_child_spec(:consumer, registry, host, protocol, args)
   end
 
   defp start_reader(_registry, _host, _protocol, nil), do: []
 
   defp start_reader(registry, host, protocol, args) do
-    reader_args =
-      merge_args(args, type: :reader, host: host, protocol: protocol, registry: registry)
-
-    {Stargate.Receiver.Supervisor, reader_args}
+    receiver_child_spec(:reader, registry, host, protocol, args)
   end
 
   defp producer_child_spec(registry, host, protocol, args) do
     producer_args = merge_args(args, host: host, protocol: protocol, registry: registry)
 
     {Stargate.Producer.Supervisor, producer_args}
+  end
+
+  defp receiver_child_spec(type, registry, host, protocol, args) do
+    receiver_args =
+      merge_args(args, type: type, registry: registry, host: host, protocol: protocol)
+
+    {Stargate.Receiver.Supervisor, receiver_args}
   end
 
   defp merge_args(args1, args2) do
