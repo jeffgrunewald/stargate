@@ -31,6 +31,7 @@ defmodule Stargate.MixProject do
       {:divo, "~> 1.1", only: [:dev, :integration]},
       {:divo_pulsar, "~> 0.1.0", only: [:dev, :integration]},
       {:ex_doc, "~> 0.21.0", only: :dev},
+      {:gen_stage, "~> 0.14.0"},
       {:jason, "~> 1.1"},
       {:mojito, "~> 0.6.0"},
       {:puid, "~> 1.0"},

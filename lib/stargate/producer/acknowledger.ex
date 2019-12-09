@@ -22,14 +22,14 @@ defmodule Stargate.Producer.Acknowledger do
   TODO
   """
   @spec start_link(keyword()) :: GenServer.on_start()
-  def start_link(args) do
-    registry = Keyword.fetch!(args, :registry)
-    tenant = Keyword.fetch!(args, :tenant)
-    namespace = Keyword.fetch!(args, :namespace)
-    topic = Keyword.fetch!(args, :topic)
+  def start_link(init_args) do
+    registry = Keyword.fetch!(init_args, :registry)
+    tenant = Keyword.fetch!(init_args, :tenant)
+    ns = Keyword.fetch!(init_args, :namespace)
+    topic = Keyword.fetch!(init_args, :topic)
 
-    GenServer.start_link(__MODULE__, args,
-      name: via(registry, :"sg_ack_#{tenant}_#{namespace}_#{topic}")
+    GenServer.start_link(__MODULE__, init_args,
+      name: via(registry, :"sg_prod_ack_#{tenant}_#{ns}_#{topic}")
     )
   end
 
@@ -37,7 +37,7 @@ defmodule Stargate.Producer.Acknowledger do
   TODO
   """
   @impl GenServer
-  def init(_args) do
+  def init(_init_args) do
     {:ok, %{}}
   end
 

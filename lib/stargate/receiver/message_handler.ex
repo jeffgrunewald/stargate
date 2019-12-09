@@ -4,11 +4,11 @@ defmodule Stargate.Receiver.MessageHandler do
   """
   @callback init(term()) :: {:ok, term()}
 
-  @callback handle_messages(term(), term()) ::
+  @callback handle_message(term(), term()) ::
               {:ack, term()}
               | {:continue, term()}
 
-  @callback handle_messages(term()) :: :ack | :continue
+  @callback handle_message(term()) :: :ack | :continue
 
   @doc """
   TODO
@@ -17,18 +17,18 @@ defmodule Stargate.Receiver.MessageHandler do
     quote do
       @behaviour Stargate.Receiver.MessageHandler
 
-      def init(args) do
-        {:ok, args}
+      def init(init_args) do
+        {:ok, init_args}
       end
 
-      def handle_messages(messages, state) do
-        case handle_messages(messages) do
+      def handle_message(message, state) do
+        case handle_message(message) do
           :ack -> {:ack, state}
           :continue -> {:continue, state}
         end
       end
 
-      def handle_messages(messages), do: :ack
+      def handle_message(message), do: :ack
 
       def topic(), do: Process.get(:sg_topic)
 
