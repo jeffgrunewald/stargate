@@ -18,7 +18,7 @@ defmodule Stargate.Receiver.Dispatcher do
   """
   def start_link(init_args) do
     registry = Keyword.fetch!(init_args, :registry)
-    tenant = Keyword.fetch(init_args, :tenant)
+    tenant = Keyword.fetch!(init_args, :tenant)
     ns = Keyword.fetch!(init_args, :namespace)
     topic = Keyword.fetch!(init_args, :topic)
 

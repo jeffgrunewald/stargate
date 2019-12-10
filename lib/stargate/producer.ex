@@ -138,7 +138,7 @@ defmodule Stargate.Producer do
   @impl WebSockex
   def handle_cast({:send, payload, ctx, ack}, state) do
     Acknowledger.produce(
-      via(state.registry, :"sg_ack_#{state.tenant}_#{state.namespace}_#{state.topic}"),
+      via(state.registry, :"sg_prod_ack_#{state.tenant}_#{state.namespace}_#{state.topic}"),
       ctx,
       ack
     )
@@ -157,7 +157,7 @@ defmodule Stargate.Producer do
 
     :ok =
       state.registry
-      |> via(:"sg_ack_#{state.tenant}_#{state.namespace}_#{state.topic}")
+      |> via(:"sg_prod_ack_#{state.tenant}_#{state.namespace}_#{state.topic}")
       |> Acknowledger.ack(response)
 
     {:ok, state}

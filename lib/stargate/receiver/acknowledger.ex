@@ -43,7 +43,7 @@ defmodule Stargate.Receiver.Acknowledger do
     tenant = Keyword.fetch!(init_args, :tenant)
     ns = Keyword.fetch!(init_args, :namespace)
     topic = Keyword.fetch!(init_args, :topic)
-    processors = Keyword.fetch!(init_args, :processors)
+    processors = Keyword.get(init_args, :processors, 1)
 
     state = %State{
       type: type,

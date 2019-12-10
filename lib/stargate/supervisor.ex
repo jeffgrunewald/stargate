@@ -16,25 +16,25 @@ defmodule Stargate.Supervisor do
   TODO
   """
   @spec start_link(keyword()) :: GenServer.on_start()
-  def start_link(args) do
-    name = Keyword.fetch!(args, :name)
+  def start_link(init_args) do
+    name = Keyword.fetch!(init_args, :name)
 
-    Supervisor.start_link(__MODULE__, args, name: :"sg_sup_#{name}")
+    Supervisor.start_link(__MODULE__, init_args, name: :"sg_sup_#{name}")
   end
 
   @impl Supervisor
-  def init(args) do
-    name = Keyword.fetch!(args, :name)
+  def init(init_args) do
+    name = Keyword.fetch!(init_args, :name)
     registry = :"sg_reg_#{name}"
-    host = Keyword.fetch!(args, :host)
-    protocol = Keyword.get(args, :protocol, "ws")
+    host = Keyword.fetch!(init_args, :host)
+    protocol = Keyword.get(init_args, :protocol, "ws")
 
     children =
       [
         {Registry, name: registry, keys: :unique},
-        start_producer(registry, host, protocol, Keyword.get(args, :producer)),
-        start_consumer(registry, host, protocol, Keyword.get(args, :consumer)),
-        start_reader(registry, host, protocol, Keyword.get(args, :reader))
+        start_producer(registry, host, protocol, Keyword.get(init_args, :producer)),
+        start_consumer(registry, host, protocol, Keyword.get(init_args, :consumer)),
+        start_reader(registry, host, protocol, Keyword.get(init_args, :reader))
       ]
       |> List.flatten()
 

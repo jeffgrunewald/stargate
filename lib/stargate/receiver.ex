@@ -95,7 +95,10 @@ defmodule Stargate.Receiver do
 
   @impl WebSockex
   def handle_frame({:text, msg}, %{tenant: tenant, namespace: ns, topic: topic} = state) do
-    :ok = Dispatcher.push(:"sg_dispatcher_#{tenant}_#{ns}_#{topic}", msg)
+    :ok =
+      state.registry
+      |> via(:"sg_dispatcher_#{tenant}_#{ns}_#{topic}")
+      |> Dispatcher.push(msg)
 
     {:ok, state}
   end

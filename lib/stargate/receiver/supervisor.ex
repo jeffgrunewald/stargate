@@ -39,7 +39,7 @@ defmodule Stargate.Receiver.Supervisor do
   end
 
   defp processors(args) do
-    count = Keyword.fetch!(args, :processors)
+    count = Keyword.get(args, :processors, 1)
     Enum.map(0..(count - 1), &to_child_spec(&1, args))
   end
 
