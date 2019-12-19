@@ -5,7 +5,7 @@ defmodule Stargate.MixProject do
     [
       app: :stargate,
       version: "0.1.0",
-      elixir: "~> 1.8",
+      elixir: "~> 1.9",
       start_permanent: Mix.env() == :prod,
       deps: deps(),
       docs: docs(),
@@ -26,7 +26,6 @@ defmodule Stargate.MixProject do
 
   defp deps() do
     [
-      {:credo, "~> 1.1", only: :dev, runtime: false},
       {:dialyxir, "~> 1.0.0-rc.7", only: [:dev], runtime: false},
       {:divo, "~> 1.1", only: [:dev, :integration]},
       {:divo_pulsar, "~> 0.1.0", only: [:dev, :integration]},
