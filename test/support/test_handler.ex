@@ -9,7 +9,9 @@ defmodule TestHandler do
     send(state.source, "message #{payload} received")
 
     processed_count = state.processed + 1
-    if processed_count == state.expected, do: send(state.source, "all #{processed_count} messages received")
+
+    if processed_count == state.expected,
+      do: send(state.source, "all #{processed_count} messages received")
 
     {:ack, %{state | processed: processed_count}}
   end

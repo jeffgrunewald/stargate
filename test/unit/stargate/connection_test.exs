@@ -34,14 +34,25 @@ defmodule Stargate.ConnectionTest do
   describe "connection settings" do
     test "generates valid connection options" do
       assert %{
-        url: "ws://app.example.com/ws/v2/reader/persistent/prod/domain/data-stream?thing=stuff",
-        host: "app.example.com",
-        protocol: "ws",
-        persistence: "persistent",
-        tenant: "prod",
-        namespace: "domain",
-        topic: "data-stream"
-      } == Stargate.Connection.connection_settings([host: "app.example.com", tenant: "prod", namespace: "domain", topic: "data-stream"], "reader", "thing=stuff")
+               url:
+                 "ws://app.example.com/ws/v2/reader/persistent/prod/domain/data-stream?thing=stuff",
+               host: "app.example.com",
+               protocol: "ws",
+               persistence: "persistent",
+               tenant: "prod",
+               namespace: "domain",
+               topic: "data-stream"
+             } ==
+               Stargate.Connection.connection_settings(
+                 [
+                   host: "app.example.com",
+                   tenant: "prod",
+                   namespace: "domain",
+                   topic: "data-stream"
+                 ],
+                 "reader",
+                 "thing=stuff"
+               )
     end
   end
 

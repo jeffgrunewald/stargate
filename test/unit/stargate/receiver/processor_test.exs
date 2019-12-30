@@ -6,6 +6,7 @@ defmodule Stargate.Receiver.ProcessorTest do
     ns = "public"
     topic = "bazqux"
     reg_name = :sg_reg_processor_test
+
     opts = [
       registry: reg_name,
       tenant: tenant,
@@ -14,8 +15,19 @@ defmodule Stargate.Receiver.ProcessorTest do
       handler: TestHandler,
       handler_init_args: {self(), 3}
     ]
+
     {:ok, registry} = Registry.start_link(keys: :unique, name: reg_name)
-    {:ok, producer} = MockProducer.start_link(count: 3, registry: reg_name, tenant: tenant, namespace: ns, topic: topic)
+
+    {:ok, producer} =
+      MockProducer.start_link(
+        count: 3,
+        registry: reg_name,
+        tenant: tenant,
+        namespace: ns,
+        topic: topic,
+        type: :dispatcher
+      )
+
     {:ok, processor} = Stargate.Receiver.Processor.start_link(opts)
     {:ok, consumer} = MockConsumer.start_link(producer: processor)
 
@@ -28,7 +40,7 @@ defmodule Stargate.Receiver.ProcessorTest do
 
   describe "processor stage" do
     test "handles produced messages", %{producer: producer} do
-      GenStage.cast(producer, :push_message)
+      GenStage.cast(producer, :push_dispatched_message)
 
       assert_receive "message 0 received"
       assert_receive "message 1 received"

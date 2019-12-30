@@ -11,19 +11,21 @@ defmodule MockSocket.Supervisor do
     source = Keyword.get(init_args, :source)
 
     [
-      {Plug.Cowboy, [
-          scheme: :http,
-          plug: MockSocket.Router,
-          options: [
-            port: port,
-            dispatch: [{:_,
-                        [
-                          {"/#{path}", MockSocket, source}
-                        ]
-                       }],
-            protocol_options: [{:idle_timeout, 60_000}]
-          ]
-        ]}
+      {Plug.Cowboy,
+       [
+         scheme: :http,
+         plug: MockSocket.Router,
+         options: [
+           port: port,
+           dispatch: [
+             {:_,
+              [
+                {"/#{path}", MockSocket, source}
+              ]}
+           ],
+           protocol_options: [{:idle_timeout, 60_000}]
+         ]
+       ]}
     ]
     |> Supervisor.init(strategy: :one_for_one)
   end
@@ -66,7 +68,8 @@ defmodule MockSocket do
         _ -> %{"messageId" => "message_id", "context" => "123"}
       end
 
-    {:reply, {:text, "{\"result\":\"ok\",\"messageId\":\"test-id\",\"context\":\"#{ctx}\"}"}, state}
+    {:reply, {:text, "{\"result\":\"ok\",\"messageId\":\"test-id\",\"context\":\"#{ctx}\"}"},
+     state}
   end
 
   def websocket_handle(:ping, %{source: pid} = state) do

@@ -3,7 +3,13 @@ defmodule Stargate.Producer.AcknowledgerTest do
   import ExUnit.CaptureLog
 
   setup do
-    opts = [registry: :sg_reg_test_acknowledger, tenant: "default", namespace: "public", topic: "foobar"]
+    opts = [
+      registry: :sg_reg_test_acknowledger,
+      tenant: "default",
+      namespace: "public",
+      topic: "foobar"
+    ]
+
     {:ok, registry} = Registry.start_link(keys: :unique, name: :sg_reg_test_acknowledger)
     {:ok, acknowledger} = Stargate.Producer.Acknowledger.start_link(opts)
 
@@ -34,7 +40,13 @@ defmodule Stargate.Producer.AcknowledgerTest do
 
   describe "asynchronous ack" do
     test "tracks a produce and executes the saved function", %{acknowledger: acknowledger} do
-      :ok = Stargate.Producer.Acknowledger.produce(acknowledger, "123", {Kernel, :send, [self(), "async_ack"]})
+      :ok =
+        Stargate.Producer.Acknowledger.produce(
+          acknowledger,
+          "123",
+          {Kernel, :send, [self(), "async_ack"]}
+        )
+
       :ok = Stargate.Producer.Acknowledger.ack(acknowledger, {:ack, "123"})
 
       assert_receive "async_ack"
@@ -42,12 +54,18 @@ defmodule Stargate.Producer.AcknowledgerTest do
 
     test "logs errors when they occur during async ack", %{acknowledger: acknowledger} do
       ack_function = fn ->
-        :ok = Stargate.Producer.Acknowledger.produce(acknowledger, "234", {Kernel, :send, [self(), "async_ack_error"]})
+        :ok =
+          Stargate.Producer.Acknowledger.produce(
+            acknowledger,
+            "234",
+            {Kernel, :send, [self(), "async_ack_error"]}
+          )
 
         :ok = Stargate.Producer.Acknowledger.ack(acknowledger, {:error, "oh nooo", "234"})
 
         Process.sleep(10)
       end
+
       assert capture_log(ack_function) =~ "Failed to execute produce for reason : \"oh nooo\""
     end
   end

@@ -2,7 +2,13 @@ defmodule Stargate.Receiver.DispatcherTest do
   use ExUnit.Case
 
   setup do
-    opts = [registry: :sg_reg_dispatcher_test, tenant: "default", namespace: "public", topic: "barbaz"]
+    opts = [
+      registry: :sg_reg_dispatcher_test,
+      tenant: "default",
+      namespace: "public",
+      topic: "barbaz"
+    ]
+
     {:ok, registry} = Registry.start_link(keys: :unique, name: :sg_reg_dispatcher_test)
     {:ok, dispatcher} = Stargate.Receiver.Dispatcher.start_link(opts)
     {:ok, consumer} = MockConsumer.start_link(producer: dispatcher, source: self())

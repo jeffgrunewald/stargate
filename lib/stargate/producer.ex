@@ -25,12 +25,12 @@ defmodule Stargate.Producer do
   """
   @spec produce(String.t(), message()) :: :ok | {:error, term()}
   def produce(url, message) when is_binary(url) do
-    with [protocol, _, host, _, _, _, persistence, tenant, ns, topic |_] <- String.split(url, "/"),
+    with [protocol, _, host, _, _, _, persistence, tenant, ns, topic | _] <-
+           String.split(url, "/"),
          name when is_atom(name) <- temp_produce_name(tenant, ns, topic),
          opts <- temp_producer_opts(name, protocol, host, persistence, tenant, ns, topic),
          {:ok, temp_producer} = Stargate.Supervisor.start_link(opts),
          :ok = produce(via(:"sg_reg_#{name}", :"sg_prod_#{tenant}_#{ns}_#{topic}"), message) do
-
       Process.unlink(temp_producer)
       Supervisor.stop(temp_producer)
       :ok

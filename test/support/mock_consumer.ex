@@ -6,7 +6,11 @@ defmodule MockConsumer do
   end
 
   def init(init_args) do
-    state = %{producer: Keyword.get(init_args, :producer), source: Keyword.get(init_args, :source)}
+    state = %{
+      producer: Keyword.get(init_args, :producer),
+      source: Keyword.get(init_args, :source)
+    }
+
     {:consumer, state, subscribe_to: [{state.producer, []}]}
   end
 
