@@ -7,6 +7,7 @@ defmodule MockSocket.Supervisor do
 
   def init(init_args) do
     port = Keyword.get(init_args, :port)
+    path = Keyword.get(init_args, :path)
     source = Keyword.get(init_args, :source)
 
     [
@@ -17,7 +18,7 @@ defmodule MockSocket.Supervisor do
             port: port,
             dispatch: [{:_,
                         [
-                          {"/ws_test", MockSocket, source}
+                          {"/#{path}", MockSocket, source}
                         ]
                        }],
             protocol_options: [{:idle_timeout, 60_000}]
@@ -54,10 +55,18 @@ defmodule MockSocket do
     {:ok, state}
   end
 
-  def websocket_handle({:text, message}, state) do
-    response = "#{message} received loud and clear"
+  def websocket_handle({:text, message}, %{source: pid} = state) do
+    received = "#{message} loud and clear"
+    send(pid, {:received_frame, received})
 
-    {:reply, {:text, response}, state}
+    %{"context" => ctx} =
+      try do
+        Jason.decode!(message)
+      rescue
+        _ -> %{"messageId" => "message_id", "context" => "123"}
+      end
+
+    {:reply, {:text, "{\"result\":\"ok\",\"messageId\":\"test-id\",\"context\":\"#{ctx}\"}"}, state}
   end
 
   def websocket_handle(:ping, %{source: pid} = state) do
@@ -79,17 +88,15 @@ defmodule SampleClient do
 
   def start_link(init_args) do
     port = Keyword.get(init_args, :port)
-    source = Keyword.get(init_args, :source)
-    WebSockex.start_link("http://localhost:#{port}/ws_test", __MODULE__, %{source: source}, name: __MODULE__)
+    path = Keyword.get(init_args, :path)
+    WebSockex.start_link("http://localhost:#{port}/#{path}", __MODULE__, %{}, name: __MODULE__)
   end
 
   def handle_cast({:send, payload}, state) do
     {:reply, {:text, payload}, state}
   end
 
-  def handle_frame({:text, message}, %{source: pid} = state) do
-    send(pid, {:received_frame, message})
-
+  def handle_frame({:text, _message}, state) do
     {:ok, state}
   end
 end

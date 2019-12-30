@@ -34,6 +34,7 @@ defmodule Stargate.MixProject do
       {:gen_stage, "~> 0.14.0"},
       {:jason, "~> 1.1"},
       {:mojito, "~> 0.6.0"},
+      {:placebo, "~> 2.0.0-rc.2", only: :test},
       {:plug, "~> 1.8.3", only: :test},
       {:plug_cowboy, "~> 2.1.0", only: :test},
       {:puid, "~> 1.0"},
