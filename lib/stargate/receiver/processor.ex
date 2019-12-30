@@ -29,8 +29,13 @@ defmodule Stargate.Receiver.Processor do
   @spec start_link(keyword()) :: GenServer.on_start()
   def start_link(init_args) do
     registry = Keyword.fetch!(init_args, :registry)
-    name = Keyword.fetch!(init_args, :name)
-    GenStage.start_link(__MODULE__, init_args, name: via(registry, name))
+    tenant = Keyword.fetch!(init_args, :tenant)
+    ns = Keyword.fetch!(init_args, :namespace)
+    topic = Keyword.fetch!(init_args, :topic)
+
+    GenStage.start_link(__MODULE__, init_args,
+      name: via(registry, :"sg_proc_#{tenant}_#{ns}_#{topic}")
+    )
   end
 
   @impl GenStage
