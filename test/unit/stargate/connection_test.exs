@@ -5,26 +5,23 @@ defmodule Stargate.ConnectionTest do
     port = Enum.random(49152..65535)
 
     {:ok, server} = MockSocket.Supervisor.start_link(port: port, path: "ws_test", source: self())
+    {:ok, client} = SampleClient.start_link(port: port, path: "ws_test")
 
     on_exit(fn ->
-      kill(server)
+      Enum.map([server, client], &kill/1)
     end)
 
     [port: port]
   end
 
   describe "connection macro" do
-    test "establishes a socket connection", %{port: port} do
-      {:ok, _client} = SampleClient.start_link(port: port, path: "ws_test")
+    test "establishes a socket connection" do
+      :ok = SampleClient.cast(Jason.encode!(%{"context" => "connection test", "messageId" => "1"}))
 
-      :ok = SampleClient.cast("connection test")
-
-      assert_receive {:received_frame, "connection test loud and clear"}
+      assert_receive {:received_frame, "connection test, {\"context\":\"connection test\",\"messageId\":\"1\"} loud and clear"}
     end
 
-    test "handles ping requests", %{port: port} do
-      {:ok, _client} = SampleClient.start_link(port: port, path: "ws_test")
-
+    test "handles ping requests" do
       SampleClient.ping_socket()
 
       assert_receive :pong_from_socket, 500

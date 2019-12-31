@@ -58,18 +58,24 @@ defmodule MockSocket do
   end
 
   def websocket_handle({:text, message}, %{source: pid} = state) do
-    received = "#{message} loud and clear"
-    send(pid, {:received_frame, received})
-
-    %{"context" => ctx} =
+    received =
       try do
         Jason.decode!(message)
       rescue
         _ -> %{"messageId" => "message_id", "context" => "123"}
       end
 
-    {:reply, {:text, "{\"result\":\"ok\",\"messageId\":\"test-id\",\"context\":\"#{ctx}\"}"},
-     state}
+    case Map.get(received, "context") do
+      nil ->
+        response = Map.get(received, "messageId")
+        send(pid, {:received_frame, "#{response} loud and clear"})
+        {:ok, state}
+      ctx when is_binary(ctx) ->
+        id = Map.get(received, "messageId", "message_id")
+        response = "#{ctx}, #{Jason.encode!(received)}"
+        send(pid, {:received_frame, "#{response} loud and clear"})
+        {:reply, {:text, Jason.encode!(%{"result" => "ok", "messageId" => "#{id}", "context" => "#{ctx}"})}, state}
+    end
   end
 
   def websocket_handle(:ping, %{source: pid} = state) do

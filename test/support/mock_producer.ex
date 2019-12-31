@@ -14,38 +14,42 @@ defmodule MockProducer do
         :processor -> :"sg_processor_#{tenant}_#{ns}_#{topic}_0"
       end
 
-    GenStage.start_link(__MODULE__, Keyword.get(init_args, :count),
-      name: {:via, Registry, {registry, name}}
-    )
+    GenStage.start_link(__MODULE__, init_args, name: {:via, Registry, {registry, name}})
   end
 
-  def init(num) do
-    dispatched_events =
-      Enum.map(0..(num - 1), fn item ->
-        %{
-          payload: Base.encode64("#{item}"),
-          publishTime: DateTime.utc_now() |> DateTime.to_iso8601()
-        }
-        |> Jason.encode!()
-      end)
+  def init(init_args) do
+    num = Keyword.get(init_args, :count)
+    type = Keyword.get(init_args, :type)
 
-    {:producer, %{dispatched_events: dispatched_events}}
+    events =
+      case type do
+        :dispatcher ->
+          Enum.map(0..(num - 1), fn item ->
+            %{
+              payload: Base.encode64("#{item}"),
+              publishTime: DateTime.utc_now() |> DateTime.to_iso8601()
+            }
+            |> Jason.encode!()
+          end)
+
+        :processor ->
+          [
+            {:continue, "skipped"}
+            | Enum.map(0..(num - 1), fn item ->
+                {:ack, "#{item}"}
+              end)
+          ]
+      end
+
+    {:producer, %{events: events}}
   end
 
-  def handle_cast(:push_dispatched_message, %{events: events} = state) when length(events) > 0 do
+  def handle_cast(:push_message, %{events: events} = state) when length(events) > 0 do
     [message | remaining_messages] = events
 
-    GenStage.cast(self(), :push_dispatched_message)
+    GenStage.cast(self(), :push_message)
 
     {:noreply, [message], %{state | events: remaining_messages}}
-  end
-
-  def handle_cast(:push_dispatched_message, %{events: events} = state) when events == [] do
-    {:noreply, [:push_count], state}
-  end
-
-  def handle_cast(:push_processed_message, state) do
-    {:noreply, [], state}
   end
 
   def handle_cast(_, state) do

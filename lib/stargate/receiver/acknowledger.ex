@@ -74,6 +74,7 @@ defmodule Stargate.Receiver.Acknowledger do
   @impl GenStage
   def handle_info(_, state), do: {:noreply, [], state}
 
+  defp ack_messages([], _receiver), do: nil
   defp ack_messages(messages, receiver) do
     Enum.each(messages, &Stargate.Receiver.ack(receiver, &1))
   end

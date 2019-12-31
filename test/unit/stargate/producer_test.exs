@@ -36,7 +36,7 @@ defmodule Stargate.ProducerTest do
       end)
 
       assert_receive {:received_frame,
-                      "{\"context\":\"123\",\"payload\":\"aGVsbG9vb28=\",\"properties\":{\"key\":\"value\"}} loud and clear"}
+                      "123, {\"context\":\"123\",\"payload\":\"aGVsbG9vb28=\",\"properties\":{\"key\":\"value\"}} loud and clear"}
     end
 
     test "produces via one-off producer", %{port: port} do
@@ -47,7 +47,7 @@ defmodule Stargate.ProducerTest do
       end)
 
       assert_receive {:received_frame,
-                      "{\"context\":\"123\",\"key\":\"wooo\",\"payload\":\"aGlpaWk=\"} loud and clear"}
+                      "123, {\"context\":\"123\",\"key\":\"wooo\",\"payload\":\"aGlpaWk=\"} loud and clear"}
     end
 
     test "produces a list of values", %{port: port} do
@@ -71,12 +71,12 @@ defmodule Stargate.ProducerTest do
         end)
 
       assert_receive {:received_frame,
-                      "{\"context\":\"123\",\"payload\":\"aGVsbG8=\"} loud and clear"}
+                      "123, {\"context\":\"123\",\"payload\":\"aGVsbG8=\"} loud and clear"}
 
       send(executor, :ack)
 
       assert_receive {:received_frame,
-                      "{\"context\":\"456\",\"payload\":\"d29ybGQ=\"} loud and clear"}
+                      "456, {\"context\":\"456\",\"payload\":\"d29ybGQ=\"} loud and clear"}
     end
 
     test "returns an error for invalid produce" do

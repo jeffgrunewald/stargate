@@ -40,7 +40,7 @@ defmodule Stargate.Receiver.ProcessorTest do
 
   describe "processor stage" do
     test "handles produced messages", %{producer: producer} do
-      GenStage.cast(producer, :push_dispatched_message)
+      GenStage.cast(producer, :push_message)
 
       assert_receive "message 0 received"
       assert_receive "message 1 received"
