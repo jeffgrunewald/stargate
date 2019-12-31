@@ -52,8 +52,19 @@ defmodule MockSocket do
   end
 
   def websocket_init(source) do
-    state = %{source: source}
+    state = %{source: source, count: 0}
 
+    {:ok, state}
+  end
+
+  def websocket_handle({:text, "push_message"}, %{count: count} = state) do
+    message = "consumer message #{count}"
+    {:reply, {:text, message}, %{state | count: count + 1}}
+  end
+
+  def websocket_handle({:text, "{\"type\":\"permit" <> permits = message }, %{source: pid} = state) do
+    request = Jason.decode!(message)
+    send(pid, {:permit_request, "permitting #{request["permitMessages"]} messages"})
     {:ok, state}
   end
 
