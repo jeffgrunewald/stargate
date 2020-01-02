@@ -48,7 +48,7 @@ defmodule Stargate.Receiver.Supervisor do
     ns = Keyword.fetch!(init_args, :namespace)
     topic = Keyword.fetch!(init_args, :topic)
     name = :"sg_processor_#{tenant}_#{ns}_#{topic}_#{number}"
-    named_args = Keyword.put(init_args, :name, name)
+    named_args = Keyword.put(init_args, :processor_name, name)
 
     Supervisor.child_spec({Stargate.Receiver.Processor, named_args}, id: name)
   end

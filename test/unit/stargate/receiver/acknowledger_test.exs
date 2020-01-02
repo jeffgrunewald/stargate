@@ -2,8 +2,8 @@ defmodule Stargate.Receiver.AcknowledgerTest do
   use ExUnit.Case
 
   setup do
-    tenant = "default"
-    ns = "public"
+    tenant = "public"
+    ns = "default"
     topic = "blorth"
     reg_name = :sg_reg_ack_test
     type = :reader

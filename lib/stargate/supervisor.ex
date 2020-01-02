@@ -24,7 +24,7 @@ defmodule Stargate.Supervisor do
 
   @impl Supervisor
   def init(init_args) do
-    name = Keyword.fetch!(init_args, :name)
+    name = Keyword.get(init_args, :name, :default)
     registry = :"sg_reg_#{name}"
     host = Keyword.fetch!(init_args, :host)
     protocol = Keyword.get(init_args, :protocol, "ws")

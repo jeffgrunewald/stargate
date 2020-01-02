@@ -2,6 +2,7 @@ defmodule Stargate.Receiver do
   @moduledoc """
   TODO
   """
+  require Logger
   use Stargate.Connection
   import Stargate.Supervisor, only: [via: 2]
   alias Stargate.{Consumer, Reader}
@@ -95,6 +96,8 @@ defmodule Stargate.Receiver do
 
   @impl WebSockex
   def handle_frame({:text, msg}, %{tenant: tenant, namespace: ns, topic: topic} = state) do
+    Logger.debug("Received frame : #{inspect(msg)}")
+
     :ok =
       state.registry
       |> via(:"sg_dispatcher_#{tenant}_#{ns}_#{topic}")

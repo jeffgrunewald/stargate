@@ -6,15 +6,17 @@ defmodule Stargate.ReceiverTest do
     tenant = "default"
     ns = "public"
     topic = "consumer-test"
+    subscription = "receiver1"
     port = Enum.random(49152..65535)
-    path = "ws/v2/consumer/persistent/#{tenant}/#{ns}/#{topic}"
+    path = "ws/v2/consumer/persistent/#{tenant}/#{ns}/#{topic}/#{subscription}"
     opts = [
       host: [localhost: port],
       registry: reg_name,
       type: :consumer,
       tenant: tenant,
       namespace: ns,
-      topic: topic
+      topic: topic,
+      subscription: subscription
     ]
 
     {:ok, registry} = Registry.start_link(keys: :unique, name: reg_name)

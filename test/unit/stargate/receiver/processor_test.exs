@@ -12,8 +12,9 @@ defmodule Stargate.Receiver.ProcessorTest do
       tenant: tenant,
       namespace: ns,
       topic: topic,
-      handler: TestHandler,
-      handler_init_args: {self(), 3}
+      handler: UnitTestHandler,
+      handler_init_args: {self(), 3},
+      processor_name: :"sg_processor_#{tenant}_#{ns}_#{topic}_0"
     ]
 
     {:ok, registry} = Registry.start_link(keys: :unique, name: reg_name)
