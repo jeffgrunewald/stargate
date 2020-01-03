@@ -9,6 +9,7 @@ defmodule Stargate.Receiver.AcknowledgerTest do
     type = :reader
     port = Enum.random(49152..65535)
     path = "ws/v2/reader/persistent/#{tenant}/#{ns}/#{topic}"
+
     opts = [
       host: [localhost: port],
       registry: reg_name,
@@ -17,6 +18,7 @@ defmodule Stargate.Receiver.AcknowledgerTest do
       namespace: ns,
       topic: topic
     ]
+
     {:ok, server} = MockSocket.Supervisor.start_link(port: port, path: path, source: self())
 
     {:ok, registry} = Registry.start_link(keys: :unique, name: reg_name)
@@ -43,7 +45,6 @@ defmodule Stargate.Receiver.AcknowledgerTest do
 
   describe "acknowledger stage" do
     test "acks messages back to the receiver socket", %{producer: producer} do
-
       GenStage.cast(producer, :push_message)
 
       assert_receive {:received_frame, "0 loud and clear"}

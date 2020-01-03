@@ -16,6 +16,7 @@ defmodule Stargate.Receiver.Dispatcher do
   @doc """
   TODO
   """
+  @spec start_link(keyword()) :: GenServer.on_start()
   def start_link(init_args) do
     registry = Keyword.fetch!(init_args, :registry)
     tenant = Keyword.fetch!(init_args, :tenant)

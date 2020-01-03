@@ -62,7 +62,9 @@ defmodule Stargate.Connection do
       end
 
     base_url =
-      "#{protocol}://#{host}/ws/v2/#{type}/#{persistence}/#{tenant}/#{namespace}/#{topic}#{subscription}"
+      "#{protocol}://#{host}/ws/v2/#{type}/#{persistence}/#{tenant}/#{namespace}/#{topic}#{
+        subscription
+      }"
 
     url =
       case params do

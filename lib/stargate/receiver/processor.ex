@@ -31,9 +31,7 @@ defmodule Stargate.Receiver.Processor do
     registry = Keyword.fetch!(init_args, :registry)
     name = Keyword.fetch!(init_args, :processor_name)
 
-    GenStage.start_link(__MODULE__, init_args,
-      name: via(registry, name)
-    )
+    GenStage.start_link(__MODULE__, init_args, name: via(registry, name))
   end
 
   @impl GenStage

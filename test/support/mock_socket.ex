@@ -62,7 +62,10 @@ defmodule MockSocket do
     {:reply, {:text, message}, %{state | count: count + 1}}
   end
 
-  def websocket_handle({:text, "{\"type\":\"permit" <> _permits = message }, %{source: pid} = state) do
+  def websocket_handle(
+        {:text, "{\"type\":\"permit" <> _permits = message},
+        %{source: pid} = state
+      ) do
     request = Jason.decode!(message)
     send(pid, {:permit_request, "permitting #{request["permitMessages"]} messages"})
     {:ok, state}
@@ -81,11 +84,16 @@ defmodule MockSocket do
         response = Map.get(received, "messageId")
         send(pid, {:received_frame, "#{response} loud and clear"})
         {:ok, state}
+
       ctx when is_binary(ctx) ->
         id = Map.get(received, "messageId", "message_id")
         response = "#{ctx}, #{Jason.encode!(received)}"
         send(pid, {:received_frame, "#{response} loud and clear"})
-        {:reply, {:text, Jason.encode!(%{"result" => "ok", "messageId" => "#{id}", "context" => "#{ctx}"})}, state}
+
+        {:reply,
+         {:text,
+          Jason.encode!(%{"result" => "ok", "messageId" => "#{id}", "context" => "#{ctx}"})},
+         state}
     end
   end
 

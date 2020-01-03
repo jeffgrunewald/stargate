@@ -16,9 +16,11 @@ defmodule Stargate.ConnectionTest do
 
   describe "connection macro" do
     test "establishes a socket connection" do
-      :ok = SampleClient.cast(Jason.encode!(%{"context" => "connection test", "messageId" => "1"}))
+      :ok =
+        SampleClient.cast(Jason.encode!(%{"context" => "connection test", "messageId" => "1"}))
 
-      assert_receive {:received_frame, "connection test, {\"context\":\"connection test\",\"messageId\":\"1\"} loud and clear"}
+      assert_receive {:received_frame,
+                      "connection test, {\"context\":\"connection test\",\"messageId\":\"1\"} loud and clear"}
     end
 
     test "handles ping requests" do

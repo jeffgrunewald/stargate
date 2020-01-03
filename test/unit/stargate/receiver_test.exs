@@ -9,6 +9,7 @@ defmodule Stargate.ReceiverTest do
     subscription = "receiver1"
     port = Enum.random(49152..65535)
     path = "ws/v2/consumer/persistent/#{tenant}/#{ns}/#{topic}/#{subscription}"
+
     opts = [
       host: [localhost: port],
       registry: reg_name,

@@ -55,10 +55,10 @@ defmodule Stargate.ProducerReceiverTest do
           ]
         )
 
-      assert_async 10, 150, fn ->
+      assert_async(10, 150, fn ->
         result = Agent.get(:integration_store, fn store -> store end) |> Enum.sort()
         assert result == expected
-      end
+      end)
 
       Supervisor.stop(reader)
     end
@@ -69,6 +69,7 @@ defmodule Stargate.ProducerReceiverTest do
       namespace = "default"
       topic = "integration2"
       subscription = "sub"
+
       consumer_opts = [
         tenant: tenant,
         namespace: namespace,
@@ -112,10 +113,10 @@ defmodule Stargate.ProducerReceiverTest do
       Process.sleep(150)
       Enum.random([consumer1, consumer2]) |> Supervisor.stop()
 
-      assert_async 10, 150, fn ->
+      assert_async(10, 150, fn ->
         result = Agent.get(:integration_store, fn store -> store end) |> Enum.sort()
         assert result == expected
-      end
+      end)
 
       Enum.map([producer, consumer1, consumer2], fn pid ->
         if Process.alive?(pid), do: Supervisor.stop(pid)
