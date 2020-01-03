@@ -17,7 +17,7 @@ defmodule Stargate.Supervisor do
   """
   @spec start_link(keyword()) :: GenServer.on_start()
   def start_link(init_args) do
-    name = Keyword.fetch!(init_args, :name)
+    name = Keyword.get(init_args, :name, :default)
 
     Supervisor.start_link(__MODULE__, init_args, name: :"sg_sup_#{name}")
   end
