@@ -66,6 +66,8 @@ defmodule Stargate.Receiver.Dispatcher do
       receiver: :"sg_#{type}_#{tenant}_#{ns}_#{topic}"
     }
 
+    {:ok, _receiver} = Stargate.Receiver.start_link(init_args)
+
     {:producer, state}
   end
 

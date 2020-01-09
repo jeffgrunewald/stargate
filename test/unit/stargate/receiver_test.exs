@@ -3,17 +3,18 @@ defmodule Stargate.ReceiverTest do
 
   setup do
     reg_name = :sg_reg_receiver_test
+    type = :consumer
     tenant = "default"
     ns = "public"
     topic = "consumer-test"
     subscription = "receiver1"
     port = Enum.random(49152..65535)
-    path = "ws/v2/consumer/persistent/#{tenant}/#{ns}/#{topic}/#{subscription}"
+    path = "ws/v2/#{type}/persistent/#{tenant}/#{ns}/#{topic}/#{subscription}"
 
     opts = [
       host: [localhost: port],
       registry: reg_name,
-      type: :consumer,
+      type: type,
       tenant: tenant,
       namespace: ns,
       topic: topic,
@@ -22,15 +23,15 @@ defmodule Stargate.ReceiverTest do
 
     {:ok, registry} = Registry.start_link(keys: :unique, name: reg_name)
     {:ok, server} = MockSocket.Supervisor.start_link(port: port, path: path, source: self())
-    {:ok, receiver} = Stargate.Receiver.start_link(opts)
     {:ok, dispatcher} = Stargate.Receiver.Dispatcher.start_link(opts)
     {:ok, consumer} = MockConsumer.start_link(producer: dispatcher, source: self())
+    receiver = {:via, Registry, {reg_name, :"sg_#{type}_#{tenant}_#{ns}_#{topic}"}}
 
     on_exit(fn ->
-      Enum.map([registry, server, receiver, dispatcher, consumer], &kill/1)
+      Enum.map([registry, server, dispatcher, consumer], &kill/1)
     end)
 
-    [server: server, receiver: receiver]
+    [receiver: receiver]
   end
 
   describe "handle_frame" do

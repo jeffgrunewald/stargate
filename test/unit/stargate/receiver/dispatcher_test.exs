@@ -2,20 +2,30 @@ defmodule Stargate.Receiver.DispatcherTest do
   use ExUnit.Case
 
   setup do
+    reg_name = :sg_reg_dispatcher_test
+    type = :reader
+    tenant = "default"
+    ns = "public"
+    topic = "barbaz"
+    port = Enum.random(49152..65535)
+    path = "ws/v2/#{type}/persistent/#{tenant}/#{ns}/#{topic}"
+
     opts = [
-      registry: :sg_reg_dispatcher_test,
-      type: :reader,
-      tenant: "default",
-      namespace: "public",
-      topic: "barbaz"
+      host: [localhost: port],
+      registry: reg_name,
+      type: type,
+      tenant: tenant,
+      namespace: ns,
+      topic: topic
     ]
 
-    {:ok, registry} = Registry.start_link(keys: :unique, name: :sg_reg_dispatcher_test)
+    {:ok, registry} = Registry.start_link(keys: :unique, name: reg_name)
+    {:ok, server} = MockSocket.Supervisor.start_link(port: port, path: path, source: self())
     {:ok, dispatcher} = Stargate.Receiver.Dispatcher.start_link(opts)
     {:ok, consumer} = MockConsumer.start_link(producer: dispatcher, source: self())
 
     on_exit(fn ->
-      Enum.each([registry, dispatcher, consumer], &kill/1)
+      Enum.each([registry, dispatcher, consumer, server], &kill/1)
     end)
 
     [dispatcher: dispatcher]

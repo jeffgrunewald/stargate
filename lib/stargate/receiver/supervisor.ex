@@ -28,7 +28,6 @@ defmodule Stargate.Receiver.Supervisor do
   def init(init_args) do
     children =
       [
-        {Stargate.Receiver, init_args},
         {Stargate.Receiver.Dispatcher, init_args},
         processors(init_args),
         {Stargate.Receiver.Acknowledger, init_args}
