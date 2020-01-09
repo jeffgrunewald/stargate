@@ -55,8 +55,16 @@ defmodule Stargate.Connection do
     namespace = Keyword.fetch!(opts, :namespace)
     topic = Keyword.fetch!(opts, :topic)
 
+    subscription =
+      case type do
+        :consumer -> "/#{Keyword.fetch!(opts, :subscription)}"
+        _ -> ""
+      end
+
     base_url =
-      "#{protocol}://#{host}/ws/v2/#{type}/#{persistence}/#{tenant}/#{namespace}/#{topic}"
+      "#{protocol}://#{host}/ws/v2/#{type}/#{persistence}/#{tenant}/#{namespace}/#{topic}#{
+        subscription
+      }"
 
     url =
       case params do

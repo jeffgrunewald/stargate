@@ -24,7 +24,9 @@ defmodule Stargate.Reader.QueryParams do
       "messageId" => starting_message
     }
     |> Enum.map(fn {key, value} -> key <> "=" <> to_string(value) end)
-    |> Enum.filter(fn param -> String.last(param) != "=" end)
+    |> Enum.filter(fn param ->
+      String.last(param) != "=" or String.match?(param, ~r/^messageId=[[:alnum:]]+/)
+    end)
     |> Enum.join("&")
   end
 end

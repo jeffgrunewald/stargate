@@ -25,17 +25,30 @@ defmodule Stargate.Receiver.Supervisor do
   TODO
   """
   @impl Supervisor
-  def init(args) do
-    registry = Keyword.fetch!(args, :registry)
-    type = Keyword.fetch!(args, :type)
-
-    children = [
-      {DynamicSupervisor,
-       [strategy: :one_for_one, name: via(registry, :"sg_#{type}_worker_sup")]},
-      {Stargate.Receiver.WorkerManager, args},
-      {Stargate.Receiver, args}
-    ]
+  def init(init_args) do
+    children =
+      [
+        {Stargate.Receiver.Dispatcher, init_args},
+        processors(init_args),
+        {Stargate.Receiver.Acknowledger, init_args}
+      ]
+      |> List.flatten()
 
     Supervisor.init(children, strategy: :one_for_all)
+  end
+
+  defp processors(args) do
+    count = Keyword.get(args, :processors, 1)
+    Enum.map(0..(count - 1), &to_child_spec(&1, args))
+  end
+
+  defp to_child_spec(number, init_args) do
+    tenant = Keyword.fetch!(init_args, :tenant)
+    ns = Keyword.fetch!(init_args, :namespace)
+    topic = Keyword.fetch!(init_args, :topic)
+    name = :"sg_processor_#{tenant}_#{ns}_#{topic}_#{number}"
+    named_args = Keyword.put(init_args, :processor_name, name)
+
+    Supervisor.child_spec({Stargate.Receiver.Processor, named_args}, id: name)
   end
 end

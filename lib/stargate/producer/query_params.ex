@@ -43,7 +43,8 @@ defmodule Stargate.Producer.QueryParams do
     case Map.get(config, :compression_type) do
       :lz4 -> "LZ4"
       :zlib -> "ZLIB"
-      _ -> "NONE"
+      :none -> "NONE"
+      _ -> ""
     end
   end
 

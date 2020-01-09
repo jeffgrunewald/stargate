@@ -24,12 +24,15 @@ defmodule Stargate.Producer do
   TODO
   """
   @spec produce(String.t(), message()) :: :ok | {:error, term()}
-  def produce(url, message) when is_binary(url) and is_binary(message) do
-    payload = construct_payload(message)
-
-    with {:ok, temp_producer} <- WebSockex.start(url, __MODULE__, %{}),
-         :ok <- produce(temp_producer, payload) do
-      Process.exit(temp_producer, :shutdown)
+  def produce(url, message) when is_binary(url) do
+    with [protocol, _, host, _, _, _, persistence, tenant, ns, topic | _] <-
+           String.split(url, "/"),
+         name when is_atom(name) <- temp_produce_name(tenant, ns, topic),
+         opts <- temp_producer_opts(name, protocol, host, persistence, tenant, ns, topic),
+         {:ok, temp_producer} = Stargate.Supervisor.start_link(opts),
+         :ok = produce(via(:"sg_reg_#{name}", :"sg_prod_#{tenant}_#{ns}_#{topic}"), message) do
+      Process.unlink(temp_producer)
+      Supervisor.stop(temp_producer)
       :ok
     else
       {:error, reason} -> {:error, reason}
@@ -138,7 +141,7 @@ defmodule Stargate.Producer do
   @impl WebSockex
   def handle_cast({:send, payload, ctx, ack}, state) do
     Acknowledger.produce(
-      via(state.registry, :"sg_ack_#{state.tenant}_#{state.namespace}_#{state.topic}"),
+      via(state.registry, :"sg_prod_ack_#{state.tenant}_#{state.namespace}_#{state.topic}"),
       ctx,
       ack
     )
@@ -157,13 +160,13 @@ defmodule Stargate.Producer do
 
     :ok =
       state.registry
-      |> via(:"sg_ack_#{state.tenant}_#{state.namespace}_#{state.topic}")
+      |> via(:"sg_prod_ack_#{state.tenant}_#{state.namespace}_#{state.topic}")
       |> Acknowledger.ack(response)
 
     {:ok, state}
   end
 
-  defp construct_payload(%{payload: _payload, context: context} = message) do
+  defp construct_payload(%{"payload" => _payload, "context" => context} = message) do
     encoded_message =
       message
       |> Map.update!("payload", &Base.encode64(&1))
@@ -172,7 +175,7 @@ defmodule Stargate.Producer do
     {encoded_message, context}
   end
 
-  defp construct_payload(%{payload: _payload} = message) do
+  defp construct_payload(%{"payload" => _payload} = message) do
     context = generate()
 
     encoded_message =
@@ -219,5 +222,21 @@ defmodule Stargate.Producer do
     reason = "Error of type : #{error} ocurred; #{explanation}"
 
     {:error, reason, ctx}
+  end
+
+  defp temp_produce_name(tenant, namespace, topic), do: :"#{tenant}_#{namespace}_#{topic}_temp"
+
+  defp temp_producer_opts(name, protocol, host, persistence, tenant, namespace, topic) do
+    [
+      name: name,
+      host: host,
+      protocol: String.trim(protocol, ":"),
+      producer: [
+        persistence: persistence,
+        tenant: tenant,
+        namespace: namespace,
+        topic: topic
+      ]
+    ]
   end
 end

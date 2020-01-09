@@ -1,5 +1,8 @@
 use Mix.Config
 
+config :logger,
+  level: :info
+
 config :stargate,
   divo: [
     {DivoPulsar, [port: 8080]}

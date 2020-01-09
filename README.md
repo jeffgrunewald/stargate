@@ -1,4 +1,5 @@
 [![Master](https://travis-ci.org/jeffgrunewald/stargate.svg?branch=master)](https://travis-ci.org/jeffgrunewald/stargate)
+![](https://github.com/jeffgrunewald/stargate/workflows/CI/badge.svg)
 
 # Stargate
 
