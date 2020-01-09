@@ -77,7 +77,8 @@ defmodule Stargate.ProducerReceiverTest do
         subscription: subscription,
         handler: IntegrationTestHandler,
         query_params: %{
-          subscription_type: :failover
+          #subscription_type: :failover,
+          pull_mode: true
         }
       ]
 
@@ -98,12 +99,12 @@ defmodule Stargate.ProducerReceiverTest do
           consumer: consumer_opts
         )
 
-      {:ok, consumer2} =
-        Stargate.Supervisor.start_link(
-          name: :consumer2,
-          host: host,
-          consumer: consumer_opts
-        )
+      # {:ok, consumer2} =
+      #   Stargate.Supervisor.start_link(
+      #     name: :consumer2,
+      #     host: host,
+      #     consumer: consumer_opts
+      #   )
 
       Stargate.produce(
         {:via, Registry, {:sg_reg_default, :"sg_prod_#{tenant}_#{namespace}_#{topic}"}},
@@ -111,16 +112,16 @@ defmodule Stargate.ProducerReceiverTest do
       )
 
       Process.sleep(150)
-      Enum.random([consumer1, consumer2]) |> Supervisor.stop()
+      # Enum.random([consumer1, consumer2]) |> Supervisor.stop()
 
       assert_async(10, 150, fn ->
         result = Agent.get(:integration_store, fn store -> store end) |> Enum.sort()
         assert result == expected
       end)
 
-      Enum.map([producer, consumer1, consumer2], fn pid ->
-        if Process.alive?(pid), do: Supervisor.stop(pid)
-      end)
+      # Enum.map([producer, consumer1, consumer2], fn pid ->
+      #   if Process.alive?(pid), do: Supervisor.stop(pid)
+      # end)
     end
   end
 end

@@ -4,6 +4,7 @@ defmodule Stargate.Receiver.DispatcherTest do
   setup do
     opts = [
       registry: :sg_reg_dispatcher_test,
+      type: :reader,
       tenant: "default",
       namespace: "public",
       topic: "barbaz"

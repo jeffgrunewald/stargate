@@ -23,4 +23,4 @@ erl_crash.dump
 stargate-*.tar
 
 # Ignore dialyzer's cached plt files.
-.plt/
+.dialyzer/

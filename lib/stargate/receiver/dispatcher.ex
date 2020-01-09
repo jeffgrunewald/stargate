@@ -5,6 +5,22 @@ defmodule Stargate.Receiver.Dispatcher do
   use GenStage
   import Stargate.Supervisor, only: [via: 2]
 
+  defmodule State do
+    @moduledoc """
+    TODO
+    """
+
+    defstruct [
+      :type,
+      :registry,
+      :tenant,
+      :namespace,
+      :topic,
+      :pull_mode,
+      :receiver
+    ]
+  end
+
   @type raw_message :: String.t()
 
   @doc """
@@ -29,8 +45,28 @@ defmodule Stargate.Receiver.Dispatcher do
   end
 
   @impl GenStage
-  def init(_init_args) do
-    {:producer, %{}}
+  def init(init_args) do
+    type = Keyword.fetch!(init_args, :type)
+    tenant = Keyword.fetch!(init_args, :tenant)
+    ns = Keyword.fetch!(init_args, :namespace)
+    topic = Keyword.fetch!(init_args, :topic)
+
+    pull =
+      case get_in(init_args, [:query_params, :pull_mode]) do
+        true -> true
+        _ -> false
+      end
+
+    state = %State{
+      registry: Keyword.fetch!(init_args, :registry),
+      tenant: tenant,
+      namespace: ns,
+      topic: topic,
+      pull_mode: pull,
+      receiver: :"sg_#{type}_#{tenant}_#{ns}_#{topic}"
+    }
+
+    {:producer, state}
   end
 
   @impl GenStage
@@ -42,8 +78,17 @@ defmodule Stargate.Receiver.Dispatcher do
   def handle_cast({:push, message}, state), do: {:noreply, [message], state}
 
   @impl GenStage
-  def handle_info(_, state), do: {:noreply, [], state}
+  def handle_demand(demand, %{pull_mode: true} = state) do
+    receiver = via(state.registry, state.receiver)
+
+    Stargate.Receiver.pull_permit(receiver, demand)
+
+    {:noreply, [], state}
+  end
 
   @impl GenStage
   def handle_demand(_, state), do: {:noreply, [], state}
+
+  @impl GenStage
+  def handle_info(_, state), do: {:noreply, [], state}
 end

@@ -16,7 +16,8 @@ defmodule Stargate.Receiver.Acknowledger do
       :registry,
       :tenant,
       :namespace,
-      :topic
+      :topic,
+      :receiver
     ]
   end
 
@@ -50,7 +51,8 @@ defmodule Stargate.Receiver.Acknowledger do
       registry: registry,
       tenant: tenant,
       namespace: ns,
-      topic: topic
+      topic: topic,
+      receiver: :"sg_#{type}_#{tenant}_#{ns}_#{topic}"
     }
 
     subscriptions = subscriptions(registry, tenant, ns, topic, processors)
@@ -61,7 +63,7 @@ defmodule Stargate.Receiver.Acknowledger do
   @impl GenStage
   def handle_events(messages, _from, state) do
     receiver =
-      via(state.registry, :"sg_#{state.type}_#{state.tenant}_#{state.namespace}_#{state.topic}")
+      via(state.registry, state.receiver)
 
     messages
     |> Enum.filter(fn {action, _id} -> action == :ack end)
