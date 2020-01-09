@@ -77,8 +77,7 @@ defmodule Stargate.ProducerReceiverTest do
         subscription: subscription,
         handler: IntegrationTestHandler,
         query_params: %{
-          #subscription_type: :failover,
-          pull_mode: true
+          subscription_type: :failover
         }
       ]
 
@@ -99,29 +98,78 @@ defmodule Stargate.ProducerReceiverTest do
           consumer: consumer_opts
         )
 
-      # {:ok, consumer2} =
-      #   Stargate.Supervisor.start_link(
-      #     name: :consumer2,
-      #     host: host,
-      #     consumer: consumer_opts
-      #   )
+      {:ok, consumer2} =
+        Stargate.Supervisor.start_link(
+          name: :consumer2,
+          host: host,
+          consumer: consumer_opts
+        )
 
       Stargate.produce(
         {:via, Registry, {:sg_reg_default, :"sg_prod_#{tenant}_#{namespace}_#{topic}"}},
         input
       )
 
-      Process.sleep(150)
-      # Enum.random([consumer1, consumer2]) |> Supervisor.stop()
+      Enum.random([consumer1, consumer2]) |> Supervisor.stop()
 
       assert_async(10, 150, fn ->
         result = Agent.get(:integration_store, fn store -> store end) |> Enum.sort()
         assert result == expected
       end)
 
-      # Enum.map([producer, consumer1, consumer2], fn pid ->
-      #   if Process.alive?(pid), do: Supervisor.stop(pid)
-      # end)
+      Enum.map([producer, consumer1, consumer2], fn pid ->
+        if Process.alive?(pid), do: Supervisor.stop(pid)
+      end)
+    end
+
+    test "consumes in pull mode" do
+      input = 0..3000 |> Enum.filter(fn num -> rem(num, 2) != 0 end) |> Enum.map(&to_string/1)
+      expected = 2..3000 |> Enum.filter(fn num -> rem(num, 2) == 0 end)
+      host = [localhost: 8080]
+      tenant = "public"
+      namespace = "default"
+      topic = "integration3"
+      subscription = "sub"
+
+      {:ok, producer} =
+        Stargate.Supervisor.start_link(
+          host: host,
+          producer: [
+            tenant: tenant,
+            namespace: namespace,
+            topic: topic
+          ]
+        )
+
+      {:ok, consumer} =
+        Stargate.Supervisor.start_link(
+          name: :consumer,
+          host: host,
+          consumer: [
+            tenant: tenant,
+            namespace: namespace,
+            topic: topic,
+            subscription: subscription,
+            handler: IntegrationTestHandler,
+            query_params: %{
+              pull_mode: true
+            }
+          ]
+        )
+
+      Stargate.produce(
+        {:via, Registry, {:sg_reg_default, :"sg_prod_#{tenant}_#{namespace}_#{topic}"}},
+        input
+      )
+
+      assert_async(10, 150, fn ->
+        result = Agent.get(:integration_store, fn store -> store end) |> Enum.sort()
+        assert result == expected
+      end)
+
+      Enum.map([producer, consumer], fn pid ->
+        if Process.alive?(pid), do: Supervisor.stop(pid)
+      end)
     end
   end
 end
