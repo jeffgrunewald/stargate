@@ -62,8 +62,7 @@ defmodule Stargate.Receiver.Acknowledger do
 
   @impl GenStage
   def handle_events(messages, _from, state) do
-    receiver =
-      via(state.registry, state.receiver)
+    receiver = via(state.registry, state.receiver)
 
     messages
     |> Enum.filter(fn {action, _id} -> action == :ack end)

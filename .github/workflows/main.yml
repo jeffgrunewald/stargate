@@ -4,6 +4,18 @@ on:
     branches:
       - master
 jobs:
+  formatter:
+    name: Formatter Check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-elixir@v1.2.0
+        with:
+          otp-version: 22.2
+          elixir-version: 1.9.4
+      - name: Run formatter check
+        run: |
+          mix format --check-formatted
   unit:
     name: Unit Test
     runs-on: ubuntu-latest
