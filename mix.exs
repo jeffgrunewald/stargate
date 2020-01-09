@@ -26,14 +26,12 @@ defmodule Stargate.MixProject do
 
   defp deps() do
     [
-      {:cowboy, "~> 2.7.0", only: [:test, :integration]},
       {:dialyxir, "~> 1.0.0-rc.7", only: :dev, runtime: false},
       {:divo, "~> 1.1", only: [:dev, :integration]},
       {:divo_pulsar, "~> 0.1.1", only: [:dev, :integration]},
       {:ex_doc, "~> 0.21.0", only: :dev},
       {:gen_stage, "~> 0.14.0"},
       {:jason, "~> 1.1"},
-      {:mojito, "~> 0.6.0"},
       {:plug_cowboy, "~> 2.1.0", only: [:test, :integration]},
       {:puid, "~> 1.0"},
       {:websockex, "~> 0.4.0"}
