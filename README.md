@@ -95,53 +95,53 @@ upon receipt of acknowledgement from Pulsar that the produce succeeded.
 To consume messages from Pulsar via Stargate, your application needs to create a consumer or reader
 process by calling something like the following:
 ```elixir
-opts = [
-  name: my_reader,               optional \\ default :default
-  host: [example.com: 8080],
-  protocol: "ws",                  optional \\ default ws
-  reader: [
-    persistence: "persistent",     optional \\ default persistent
-    tenant: "public",
-    namespace: "default",
-    topic: "foo",
-    processors: 3,                 optional \\ default 1
-    handler: MyApp.Reader.Handler,
-    handler_init_args: []          optional \\ default []
-    query_params: %{               all query params are optional
-      queue_size: 1_000,             \\ default 1_000
-      name: "morty",
-      starting_message: :latest      \\ default :latest, options :latest | :earliest | "some-message-id"
-    }
+  opts = [
+    name: my_reader,               optional \\ default :default
+    host: [example.com: 8080],
+    protocol: "ws",                  optional \\ default ws
+    reader: [
+      persistence: "persistent",     optional \\ default persistent
+      tenant: "public",
+      namespace: "default",
+      topic: "foo",
+      processors: 3,                 optional \\ default 1
+      handler: MyApp.Reader.Handler,
+      handler_init_args: []          optional \\ default []
+      query_params: %{               all query params are optional
+        queue_size: 1_000,             \\ default 1_000
+        name: "morty",
+        starting_message: :latest      \\ default :latest, options :latest | :earliest | "some-message-id"
+      }
+    ]
   ]
-]
 
-opts = [
-  name: my_consumer,                optional \\ default :default
-  host: [example.com: 8080],
-  protocol: "ws",                   optional \\ default ws
-  consumer: [
-    persistence: "persistent",      optional \\ default persistent
-    tenant: "public",
-    namespace: "default",
-    topic: "foo",
-    subscription: "my-app",
-    processors: 3,                  optional \\ default 1
-    handler: MyApp.Reader.Handler,
-    handler_init_args: []           optional \\ default []
-    query_params: %{                all query params are optional
-      subscription_type: :shared,     \\ default :exclusive
-      ack_timeout: 100,               \\ default 0
-      queue_size: 1_000,              \\ default 1_000
-      name: "rick",
-      priority: 10,
-      max_redeliver_count: 10,        \\ default 0
-      dead_letter_topic: "ricks-dlq", \\ default "{topic}-{subscription}-DLQ"
-      pull_mode: true                 \\ default false
-    }
+  opts = [
+    name: my_consumer,                optional \\ default :default
+    host: [example.com: 8080],
+    protocol: "ws",                   optional \\ default ws
+    consumer: [
+      persistence: "persistent",      optional \\ default persistent
+      tenant: "public",
+      namespace: "default",
+      topic: "foo",
+      subscription: "my-app",
+      processors: 3,                  optional \\ default 1
+      handler: MyApp.Reader.Handler,
+      handler_init_args: []           optional \\ default []
+      query_params: %{                all query params are optional
+        subscription_type: :shared,     \\ default :exclusive
+        ack_timeout: 100,               \\ default 0
+        queue_size: 1_000,              \\ default 1_000
+        name: "rick",
+        priority: 10,
+        max_redeliver_count: 10,        \\ default 0
+        dead_letter_topic: "ricks-dlq", \\ default "{topic}-{subscription}-DLQ"
+        pull_mode: true                 \\ default false
+      }
+    ]
   ]
-]
 
-Stargate.Supervisor.start_link(opts)
+  Stargate.Supervisor.start_link(opts)
 ```
 
 Stargate's receivers are implemented using GenStage to allow for the message processing (the processes that actually
@@ -158,24 +158,25 @@ hypothetical company's internal R&D topic publishing application features ready 
 produce messages about those feature messages to the application marketing team's topic for public consumption.
 
 ```elixir
-options = [
-  name: pulsar-app,
-  host: [example.com: 8080],
-  producer: [
-    persistence: "non-persistent",
-    tenant: "marketing",
-    namespace: "public",
-    topic: "new-stuff"
+  options = [
+    name: :pulsar_app,
+    host: [{:"example.com", 8080}],
+    producer: [
+      persistence: "non-persistent",
+      tenant: "marketing",
+      namespace: "public",
+      topic: "new-stuff"
+    ]
+    consumer: [
+      tenant: "internal",
+      namespace: "research",
+      topic: "ready-to-release",
+      subscription: "rss-feed",
+      handler: Publicizer.MessageHandler
+    ]
   ]
-  consumer: [
-    tenant: "internal",
-    namespace: "research",
-    topic: "ready-to-release",
-    handler: Publicizer.MessageHandler
-  ]
-]
 
-Stargate.Supervisor.start_link(options)
+  Stargate.Supervisor.start_link(options)
 ```
 
 ### Receiving Messages
