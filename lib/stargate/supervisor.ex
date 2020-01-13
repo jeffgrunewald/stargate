@@ -1,11 +1,14 @@
 defmodule Stargate.Supervisor do
   @moduledoc """
-  TODO
+  This module defines a top-level supervisor for your Stargate client.
+  It takes a keyword list of configuration values for connecting to the
+  cluster and any producers, readers, or consumers desired, and orchestrates
+  the starting of the process registry and the websocket client(s).
   """
   use Supervisor
 
   @doc """
-  TODO
+  Convenience function for working with the Stargate process registry.
   """
   @spec via(atom(), atom()) :: {:via, atom(), tuple()}
   def via(registry, name) do
@@ -13,7 +16,24 @@ defmodule Stargate.Supervisor do
   end
 
   @doc """
-  TODO
+  Creates a Stargate Supervisor and links it to the current process.
+  Pass a keyword list of connection and client information to define
+  the types of websocket connection to establish with the Pulsar cluster.
+
+  # Example
+
+      opts = [
+          host: [{"broker-url.com", 8080}]
+          producer: [
+              ... producer configs ...
+          ],
+          consumer: [
+              ... consumer configs ...
+          ]
+      ]
+
+  See the `Stargate.Producer` and `Stargate.Receiver` modules for the full
+  list of configuration options to each type of client connection.
   """
   @spec start_link(keyword()) :: GenServer.on_start()
   def start_link(init_args) do

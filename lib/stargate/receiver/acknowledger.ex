@@ -1,6 +1,10 @@
 defmodule Stargate.Receiver.Acknowledger do
   @moduledoc """
-  TODO
+  Defines the `Stargate.Receiver.Acknowledger` GenStage process
+  that acts as the final consumer in the receive pipeline to
+  acknowledge successful processing of messages back to Pulsar
+  to allow more messages to be sent and for the cluster to
+  delete messages from the subscription in the case of consumers.
   """
 
   use GenStage
@@ -8,7 +12,12 @@ defmodule Stargate.Receiver.Acknowledger do
 
   defmodule State do
     @moduledoc """
-    TODO
+    Defines the struct used by a `Stargate.Receiver.Acknowledger`
+    to store its state. Includes the type of the receiver (reader
+    or consumer), the name of the process registry associated with
+    the client supervision tree, the atom key of the receiver socket
+    process within the process registry, and the path parameters
+    of the topic connection (tenant, namespace, topic).
     """
 
     defstruct [
@@ -22,7 +31,8 @@ defmodule Stargate.Receiver.Acknowledger do
   end
 
   @doc """
-  TODO
+  Starts a `Stargate.Receiver.Acknowledger` process and links it to
+  the calling process.
   """
   @spec start_link(keyword()) :: GenServer.on_start()
   def start_link(init_args) do

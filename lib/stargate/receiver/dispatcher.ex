@@ -1,13 +1,23 @@
 defmodule Stargate.Receiver.Dispatcher do
   @moduledoc """
-  TODO
+  Defines the `Stargate.Receiver.Dispatcher` GenStage process
+  that functions as the producer in the pipeline, receiving messages
+  pushed from the reader or consumer socket and dispatching to the
+  rest of the pipeline.
   """
   use GenStage
   import Stargate.Supervisor, only: [via: 2]
 
   defmodule State do
     @moduledoc """
-    TODO
+    Defines the struct used by a `Stargate.Receiver.Dispatcher`
+    to store its state.
+
+    Includes the type of the receiver (consumer or reader), the name
+    of the process registry associated to the supervision tree, the
+    path parameters of the topic (tenant, namespace, topic), the atom
+    key of the websocket connection within the process registry, and
+    whether or not the receiver is in push or pull mode if it's consumer.
     """
 
     defstruct [
@@ -24,13 +34,17 @@ defmodule Stargate.Receiver.Dispatcher do
   @type raw_message :: String.t()
 
   @doc """
-  TODO
+  Push messages received over the reader or consumer connection into the
+  GenStage processing pipeline for handling and acknowledgement. This is normally
+  handled automatically by the websocket connection but can also be called directly
+  for testing the receive pipeline.
   """
   @spec push(GenServer.server(), [raw_message()] | raw_message()) :: :ok
   def push(dispatcher, messages), do: GenServer.cast(dispatcher, {:push, messages})
 
   @doc """
-  TODO
+  Starts a `Stargate.Receiver.Dispatcher` GenStage process and links it to
+  the calling process.
   """
   @spec start_link(keyword()) :: GenServer.on_start()
   def start_link(init_args) do

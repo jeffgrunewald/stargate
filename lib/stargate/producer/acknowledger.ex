@@ -1,25 +1,44 @@
 defmodule Stargate.Producer.Acknowledger do
   @moduledoc """
-  TODO
+  By default, `Stargate.produce/2` will block the calling
+  process until acknowledgement is received from Pulsar that the
+  message was successfully produced. This can optionally switch
+  to an asynchronous acknowledgement by passing an MFA tuple to
+  `Stargate.produce/3`.
+
+  This modules defines a GenServer process that
+  works in tandem with a producer websocket connection
+  to wait for and send receipt acknowledgements received
+  from produce operations to the calling process or otherwise
+  perform asynchronous acknowledgement operations.
   """
   require Logger
   use GenServer
   import Stargate.Supervisor, only: [via: 2]
 
   @doc """
-  TODO
+  Sends a message to the acknowledger process to perform the ack
+  operation saved for that particular message (as identified by the
+  context sent with the message).
   """
   @spec ack(GenServer.server(), {:ack, term()} | {:error, term(), term()}) :: :ok
   def ack(acknowledger, response), do: GenServer.cast(acknowledger, response)
 
   @doc """
-  TODO
+  Called by the producer when a message is produced to the Pulsar cluster.
+  This function sends a message's context and the desired operation to perform
+  for acknowledgement to the Acknowledger process to save in its state and act
+  on when directed to acknowledge that message.
+
+  Unless instructed otherwise by calling `Stargate.produce/3`, `Stargate.produce/2`
+  assumes the third argument to be the PID of the calling process to send
+  receipt confirmation and unblock.
   """
   @spec produce(GenServer.server(), String.t(), pid() | tuple()) :: :ok
   def produce(acknowledger, ctx, ack), do: GenServer.cast(acknowledger, {:produce, ctx, ack})
 
   @doc """
-  TODO
+  Starts a `Stargate.Producer.Acknowledger` process and link it to the calling process.
   """
   @spec start_link(keyword()) :: GenServer.on_start()
   def start_link(init_args) do
@@ -33,9 +52,6 @@ defmodule Stargate.Producer.Acknowledger do
     )
   end
 
-  @doc """
-  TODO
-  """
   @impl GenServer
   def init(_init_args) do
     {:ok, %{}}
