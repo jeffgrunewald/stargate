@@ -38,6 +38,7 @@ end
 The docs can be found at [https://hexdocs.pm/stargate](https://hexdocs.pm/stargate).
 
 ## Usage
+
 ### Produce
 Producing to Pulsar via Stargate is as simple as passing an Erlang term to the produce function. Stargate
 takes care of encoding the message payload with the necessary fields and format required by Pulsar with
