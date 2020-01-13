@@ -1,10 +1,20 @@
 defmodule Stargate.Producer.QueryParams do
   @moduledoc """
-  TODO
+  This modules provides the function to generate query parameters
+  for establishing a producer connection to a topic with Pulsar.
   """
 
   @doc """
-  TODO
+  Generates a query parameter string to apped to the URL and path
+  parameters when creating a Stargate.Producer connection.
+
+  Stargate does not generate explicit query parameters for default
+  values when not supplied by the calling application as Pulsar itself
+  assumes default values when not supplied.
+
+  Query parameters with nil values are removed from the resulting
+  connection string so only those with explicit values will be
+  passed to Pulsar when creating a connection.
   """
   @spec build_params(map() | nil) :: String.t()
   def build_params(nil), do: ""
@@ -22,7 +32,7 @@ defmodule Stargate.Producer.QueryParams do
       "batchingMaxPublishDelay" => Map.get(config, :batch_max_delay),
       "messageRoutingMode" => routing_mode,
       "compressionType" => compression_type,
-      "producerName" => Map.get(config, :producer_name),
+      "producerName" => Map.get(config, :name),
       "initialSequenceId" => Map.get(config, :initial_seq_id),
       "hashingScheme" => hashing_scheme
     }

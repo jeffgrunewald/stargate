@@ -13,7 +13,7 @@ defmodule Stargate.Producer.QueryParamsTest do
         routing_mode: :round_robin,
         compression_type: :zlib,
         send_timeout: 3_000,
-        producer_name: "foobar",
+        name: "foobar",
         initial_seq_id: 2_500_000_000
       }
 

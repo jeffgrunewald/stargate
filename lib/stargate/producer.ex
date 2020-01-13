@@ -1,6 +1,11 @@
 defmodule Stargate.Producer do
   @moduledoc """
-  TODO
+  Provides a producer websocket process and functions for producing
+  messages to the cluster.
+
+  Pass a keyword list of configuration options to the `start_link/1`
+  function or simply call `produce/2` passing a valid
+  Pulsar producer URL in place of a producer process.
   """
   require Logger
   use Stargate.Connection
@@ -8,7 +13,25 @@ defmodule Stargate.Producer do
   import Stargate.Supervisor, only: [via: 2]
   alias Stargate.Producer.{Acknowledger, QueryParams}
 
+  @typedoc """
+  A producer websocket process identified by a pid or via tuple.
+  The atom key for identifying the producer in the via tuple is of
+  the form `:"sg_prod_<tenant>_<namespace>_<topic>`.
+  """
   @type producer :: GenServer.server()
+
+  @typedoc """
+  Pulsar messages produced by Stargate can be any of the following forms:
+
+      * raw binary payload (must be encodable to base64)
+      * a {key, value} tuple where key is the optional message key and value is the payload
+      * a map with a "payload" field and optional fields for a key, context, properties (key/value
+        pairs as a map), and list of strings identifying replication clusters.
+
+  Stargate uses the `context` field on a message produced to Pulsar to correlate receipt messages
+  from the cluster to sent messages. If you do not define a context in your message, Stargate
+  generates one automatically.
+  """
   @type message ::
           String.t()
           | {String.t(), String.t()}
@@ -21,9 +44,15 @@ defmodule Stargate.Producer do
             }
 
   @doc """
-  TODO
+  Produce a message or list of messages to the cluster by producer URL.
+  This is good for irregular and/or ad hoc producer needs that do not require
+  a persistent websocket connection and ideally with few to no query parameters
+  to configure producer options from the default.
+
+  Once the message(s) is produced, the calling process automatically blocks until
+  it receives acknowledgement from the cluster that the message(s) has been received.
   """
-  @spec produce(String.t(), message()) :: :ok | {:error, term()}
+  @spec produce(String.t(), message() | [message()]) :: :ok | {:error, term()}
   def produce(url, message) when is_binary(url) do
     with [protocol, _, host, _, _, _, persistence, tenant, ns, topic | _] <-
            String.split(url, "/"),
@@ -41,7 +70,11 @@ defmodule Stargate.Producer do
   end
 
   @doc """
-  TODO
+  Produce a list of messages to a Stargate producer process. Messages can be any
+  of the accepted forms (see `message` type).
+
+  Once the message(s) is produced, the calling process automatically blocks until
+  it receives acknowledgement from the cluster that the message(s) has been received.
   """
   @spec produce(producer(), [message()]) :: :ok | {:error, term()}
   def produce(producer, messages) when is_list(messages) do
@@ -49,7 +82,11 @@ defmodule Stargate.Producer do
   end
 
   @doc """
-  TODO
+  Produce a single message to a Stargate producer process. Messages can be any
+  of the accepted forms (see `message` type).
+
+  Once the message(s) is produced, the calling process automatically blocks until
+  it receives acknowledgement from the cluster that the message(s) has been received.
   """
   @spec produce(producer(), message()) :: :ok | {:error, term()}
   def produce(producer, message) do
@@ -64,7 +101,13 @@ defmodule Stargate.Producer do
   end
 
   @doc """
-  TODO
+  Produce a list of messages to a Stargate producer process. Messages can be any
+  of the accepted forms (see `message` type).
+
+  When calling `produce/3` the third argument must be an MFA tuple which is used by
+  the producer's acknowledger process to asynchronously perform acknowledgement that the
+  message was received by the cluster successfully. This is used to avoid blocking the
+  calling process for performance reasons.
   """
   @spec produce(producer(), [message()], {module(), atom(), [term()]}) :: :ok | {:error, term()}
   def produce(producer, messages, mfa) when is_list(messages) do
@@ -72,7 +115,13 @@ defmodule Stargate.Producer do
   end
 
   @doc """
-  TODO
+  Produce a message to a Stargate producer process. Messages can be any of the accepted
+  forms (see `message` type).
+
+  When calling `produce/3` the third argument must be an MFA tuple which is used by
+  the producer's acknowledger process to asynchronously perform acknowledgement that the
+  message was received by the cluster successfully. This is used to avoid blocking the
+  calling process for performance reasons.
   """
   @spec produce(producer(), message(), {module(), atom(), [term()]}) :: :ok | {:error, term()}
   def produce(producer, message, mfa) do
@@ -83,7 +132,11 @@ defmodule Stargate.Producer do
 
   defmodule State do
     @moduledoc """
-    TODO
+    Defines the state stored by the producer websocket process. The Stargate producer
+    records the registry name associated to its supervision tree, the URL of the cluster and topic
+    it connects to, as well as the individual components that make up the URL including the
+    host, protocol (ws or wss), topic path parameters (persistent or non-persistent, tenant,
+    namespace, and topic) and any query parameters configuring the connection.
     """
     defstruct [
       :registry,
@@ -99,26 +152,42 @@ defmodule Stargate.Producer do
   end
 
   @doc """
-  config = [
-    host: [localhost: 8080],
-    protocol: "ws",                               optional \\ ws
-    persistence: "persistent",                    optional \\ persistent
-    tenant: "public",
-    namespace: "default",
-    topic: "foo",
-    query_params: %{                              optional
-      send_timeout: 30_000,                         \\ 30_000
-      batch_enabled: true,                          \\ false
-      batch_max_msg: 1_000,                         \\ 1_000
-      max_pending_msg: 1_000,                       \\ 1_000
-      batch_max_delay: 25,                          \\ 10
-      routing_mode: :round_robin,                   \\ :round_robin | :single
-      compression_type: :lz4,                       \\ :lz4 | :zlib
-      producer_name: "myapp-producer",
-      initial_seq_id: 100,
-      hashing_scheme: :murmur3                      \\ :java_string | :murmur3
-    }
-  ]
+  Start a producer websocket process and link it to the current process.
+
+  Producer options require, at minimum:
+
+      * `host` is a tuple of the address or URL of the Pulsar cluster (broker service)
+        and the port on which the service is exposed.
+      * `tenant` is a string representing the tenant portion of the producer URL path parameter.
+      * `namespace` is a string representing the namespace portion of the producer URL path parameter.
+      * `topic` is a string representing the topic portion of the producer URL path parameter.
+      * `registry` is the name of the process registry associated to the client's supervision tree.
+        Stargate uses this to send messages back and forth between the producer and its acknowledger.
+
+  Additional optional parameters to a producer are:
+
+      * `protocol` can be one of "ws" or "wss"; defaults to "ws"
+      * `persistence` can be one of "persistent" or "non-persistent" per the Pulsar
+        specification of topics as being in-memory only or persisted to the brokers' disks.
+        Defaults to "persistent".
+      * `query_params` is a map containing any or all of the following:
+
+          * `send_timeout` the time at which a produce operation will time out; defaults to 30 seconds
+          * `batch_enabled` can be true or false to enable/disable the batching of messages.
+            Defaults to "false".
+          * `batch_max_msg` defines the maximum number of messages in a batch (if enabled).
+            Defaults to 1000.
+          * `max_pending_msg` defines the maximum size of the internal queue holding messages. Defaults
+            to 1000.
+          * `batch_max_delay` sets the time period within which message batches will be published.
+            Defaults to 10 milliseconds.
+          * `routing_mode` can be one of :round_robin or :single. _Pulsar has deprecated this parameter_.
+          * `compression_type` can be one of :lz4, :zlib, or :none. Defaults to :none
+          * `name` is used to enforce only one producer with the given name is publishing to
+            connected topic.
+          * `initial_seq_id` sets the baseline for the sequence ids assigned to published messages.
+          * `hashing_scheme` can be one of :java_string or :murmur3 when defining a hashing function to
+            use with partitioned topics. _Pulsar has deprecated this parameter_.
   """
   @spec start_link(keyword()) :: GenServer.on_start()
   def start_link(args) do

@@ -1,6 +1,8 @@
 defmodule Stargate.Connection do
   @moduledoc """
-  TODO
+  Connection provides the core abstraction for the websocket connection
+  between the client application and the Pulsar cluster shared by all
+  Stargate producer, reader, and consumer processes.
   """
 
   @type connection_settings :: %{
@@ -14,7 +16,9 @@ defmodule Stargate.Connection do
         }
 
   @doc """
-  TODO
+  The Connection using macro provides the common websocket connection
+  and keepalive functionality into a single line for replicating connection
+  and ping/pong handling in a single place.
   """
   defmacro __using__(_opts) do
     quote do
@@ -44,7 +48,10 @@ defmodule Stargate.Connection do
   end
 
   @doc """
-  TODO
+  Parses the keyword list configuration passed to a websocket and constructs
+  the url needed to establish a connection to the Pulsar cluster. If query
+  params are provided, appends the connection-specific params string to the url
+  and returns the full result as a map to pass to the connection `start_link/1` function.
   """
   @spec connection_settings(keyword(), atom(), String.t()) :: connection_settings()
   def connection_settings(opts, type, params) do

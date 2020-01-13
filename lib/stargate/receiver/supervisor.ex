@@ -1,12 +1,19 @@
 defmodule Stargate.Receiver.Supervisor do
   @moduledoc """
-  TODO
+  Defines a supervisor for the `Stargate.Receiver` reader
+  and consumer connections and the associated GenStage pipeline
+  for processing and acknowledging messages received on the connection.
+
+  The top-level `Stargate.Supervisor` passes the shared connection and
+  `:consumer` or `:reader` configurations to the receiver supervisor
+  to delegate management of all receiving processes.
   """
   use Supervisor
   import Stargate.Supervisor, only: [via: 2]
 
   @doc """
-  TODO
+  Starts a `Stargate.Receiver.Supevisor` and links it to the calling
+  process.
   """
   @spec start_link(keyword()) :: GenServer.on_start()
   def start_link(args) do
@@ -22,7 +29,13 @@ defmodule Stargate.Receiver.Supervisor do
   end
 
   @doc """
-  TODO
+  Generates a list of child processes to initialize and
+  start them under the supervisor with a `:one_for_all` strategy
+  to ensure messages are not dropped if any single stage in
+  the pipeline fails.
+
+  The processors stage is configurable to a desired number of processes
+  for parallelizing complex or long-running message handling operations.
   """
   @impl Supervisor
   def init(init_args) do

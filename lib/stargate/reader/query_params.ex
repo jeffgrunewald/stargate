@@ -1,10 +1,20 @@
 defmodule Stargate.Reader.QueryParams do
   @moduledoc """
-  TODO
+  This module provides the function to generate query parameters
+  for establishing a reader connection to a topic with Pulsar.
   """
 
   @doc """
-  TODO
+  Generates a query parameter string to apped to the URL and path
+  parameters when creating a Stargate.Receiver reader connection.
+
+  Stargate does not generate explicit query parameters for default
+  values when not supplied by the calling application as Pulsar itself
+  assumes default values when not supplied.
+
+  Query parameters with nil values are removed from the resulting
+  connection string so only those with explicit values will be
+  passed to Pulsar when creating a connection.
   """
   @spec build_params(map() | nil) :: String.t()
   def build_params(nil), do: ""

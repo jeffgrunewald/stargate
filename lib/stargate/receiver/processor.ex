@@ -1,6 +1,22 @@
 defmodule Stargate.Receiver.Processor do
   @moduledoc """
-  TODO
+  Defines a `Stargate.Receiver.Processor` module as a GenStage
+  process under the consumer or reader supervision tree.
+
+  The processor stage performs the message handling step for all
+  messages received on the connection by storing and calling the
+  application's handler module on each message received.
+
+  To better handle complex or long-running operations when handling
+  messages, the processor stage can be scaled horizontally and takes
+  care of the necessary subscriptions both upstream and downstream
+  within the GenStage pipeline.
+
+  During initialization, the processor stage stores several
+  pieces of information in its process dictionary that are
+  available to the application's message handler module when
+  handling messages if necessary including the topicc, namespace,
+  tenant, and persistence of the connection.
   """
   use GenStage
   import Stargate.Supervisor, only: [via: 2]
@@ -9,7 +25,13 @@ defmodule Stargate.Receiver.Processor do
 
   defmodule State do
     @moduledoc """
-    TODO
+    Defines the struct `Stargate.Receiver.Processor` uses
+    to store its state.
+
+    Records the name of the process registry, the path parameters
+    (persistence, tenant, namespace, and topic) as well as the
+    handler module defined by the calling application, any init
+    args rrequired for a stateful handler and the state of the handler.
     """
     defstruct [
       :registry,
@@ -24,7 +46,12 @@ defmodule Stargate.Receiver.Processor do
   end
 
   @doc """
-  TODO
+  Starts a `Stargate.Receiver.Processor` GenStage process and
+  links it to the calling process.
+
+  Passes the configuration from the supervisors to the stage to
+  initialize its state and setup subscription to the
+  `Stargate.Receiver.Dispatcher` producer stage.
   """
   @spec start_link(keyword()) :: GenServer.on_start()
   def start_link(init_args) do
