@@ -14,7 +14,7 @@ defmodule Stargate.MixProject do
       source_url: "https://github.com/jeffgrunewald/stargate",
       elixirc_paths: elixirc_paths(Mix.env()),
       test_paths: test_paths(Mix.env()),
-      dialyzer: [plt_file: {:no_warn, ".dialyzer/#{System.version()}.plt"}]
+      dialyzer: [plt_file: {:no_warn, ".dialyzer/dialyzer-#{System.version()}.plt"}]
     ]
   end
 

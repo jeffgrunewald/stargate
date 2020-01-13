@@ -64,6 +64,8 @@ jobs:
         with:
           path: .dialyzer
           key: dialyzer-plt
+          restore-keys: |
+            dialyzer-
       - name: Get dependencies
         run: |
           mix local.rebar --force
