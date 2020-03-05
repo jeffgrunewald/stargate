@@ -1,6 +1,8 @@
 defmodule Stargate.MixProject do
   use Mix.Project
 
+  @github "https://github.com/jeffgrunewald/stargate"
+
   def project() do
     [
       app: :stargate,
@@ -11,7 +13,8 @@ defmodule Stargate.MixProject do
       docs: docs(),
       package: package(),
       description: description(),
-      source_url: "https://github.com/jeffgrunewald/stargate",
+      homepage_url: @github,
+      source_url: @github,
       elixirc_paths: elixirc_paths(Mix.env()),
       test_paths: test_paths(Mix.env()),
       dialyzer: [plt_file: {:no_warn, ".dialyzer/#{System.version()}.plt"}]
@@ -51,17 +54,15 @@ defmodule Stargate.MixProject do
     [
       maintainers: ["jeffgrunewald"],
       licenses: ["Apache 2.0"],
-      links: %{"GitHub" => "https://github.com/jeffgrunewald/stargate"}
+      links: %{"GitHub" => @github}
     ]
   end
 
   defp docs() do
     [
-      main: "readme",
-      source_url: "https://github.com/jeffgrunewald/stargate",
-      extras: [
-        "README.md"
-      ]
+      source_url: @github,
+      extras: ["README.md"],
+      source_url_pattern: "#{@github}/blob/master/%{path}#L%{line}"
     ]
   end
 end
