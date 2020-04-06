@@ -73,7 +73,7 @@ defmodule Stargate.ConnectionTest do
 
       assert [
                ssl_options: ssl_opts,
-               extra_headers: [{"Authorization", token}]
+               extra_headers: [{"Authorization", "Bearer " <> token}]
              ] == Stargate.Connection.auth_settings(init_args)
     end
   end
