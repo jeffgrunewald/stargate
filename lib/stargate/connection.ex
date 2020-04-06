@@ -90,6 +90,24 @@ defmodule Stargate.Connection do
     }
   end
 
+  @doc """
+  Parses the keyword list configuration passed to a websocket and constructs the
+  authentication options, either SSL or token-based, to be passed to the websocket
+  process.
+  """
+  @spec auth_settings(keyword()) :: keyword()
+  def auth_settings(opts) do
+    opts
+    |> Keyword.take([:ssl_options, :auth_token])
+    |> Enum.map(&transform_auth/1)
+  end
+
+  defp transform_auth({:ssl_options, _opts} = ssl_opts), do: ssl_opts
+
+  defp transform_auth({:auth_token, token}) do
+    {:extra_headers, [{"Authorization", token}]}
+  end
+
   defp format_host([{host, port}]), do: "#{host}:#{port}"
   defp format_host({host, port}), do: "#{host}:#{port}"
   defp format_host(connection) when is_binary(connection), do: connection
