@@ -105,7 +105,7 @@ defmodule Stargate.Connection do
   defp transform_auth({:ssl_options, _opts} = ssl_opts), do: ssl_opts
 
   defp transform_auth({:auth_token, token}) do
-    {:extra_headers, [{"Authorization", token}]}
+    {:extra_headers, [{"Authorization", "Bearer " <> token}]}
   end
 
   defp format_host([{host, port}]), do: "#{host}:#{port}"
