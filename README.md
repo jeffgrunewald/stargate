@@ -179,6 +179,39 @@ produce messages about those feature messages to the application marketing team'
   Stargate.Supervisor.start_link(options)
 ```
 
+### Security
+Stargate supports client security in two ways: by allowing TLS encryption of the connection between the client
+and the Pulsar cluster, and by JWT token authentication of the Websocket connection.
+
+In order to allow TLS encryption of the websocket connection, the URL to the cluster must be over the secure
+port (Pulsar defaults to 8443) and using the `wss://` prefix instead of the plaintext `ws://`.
+
+To pass custom certificates, to the client connection, include the following in the init options passed to the
+producer or receiver connection:
+
+```elixir
+  options = [
+    ...
+    ssl_options: [
+      cacertfile: /certificates/cacert.pem,
+      certfile: /certificates/cert.pem,
+      keyfile: /certificates/key.pem
+    ],
+    ...
+  ]
+```
+
+In order to pass a JWT token for authentication, include the following in your connection options for either
+the producer or receiver process when starting the process.
+
+```elixir
+  options = [
+    ...
+    auth_token: "some-jwt-token-string",
+    ...
+  ]
+```
+
 ### Receiving Messages
 The message handler module passed to a receiver is expected to implement the `Stargate.Receiver.MessageHandler`
 behaviour which includes an optional `init/1` if your message handler is expected to track state across

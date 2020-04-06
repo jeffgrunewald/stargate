@@ -55,6 +55,29 @@ defmodule Stargate.ConnectionTest do
     end
   end
 
+  describe "auth settings" do
+    test "generates valid authentication options" do
+      token = "jwt-token"
+
+      ssl_opts = [
+        cacertfile: "/certs/ca.pem",
+        certfile: "/certs/cert.pem",
+        keyfile: "/certs/key.pem"
+      ]
+
+      init_args = [
+        ssl_options: ssl_opts,
+        auth_token: token,
+        something: "else"
+      ]
+
+      assert [
+               ssl_options: ssl_opts,
+               extra_headers: [{"Authorization", token}]
+             ] == Stargate.Connection.auth_settings(init_args)
+    end
+  end
+
   defp kill(pid) do
     ref = Process.monitor(pid)
     Process.exit(pid, :normal)

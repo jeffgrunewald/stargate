@@ -202,9 +202,15 @@ defmodule Stargate.Producer do
       |> Map.put(:registry, registry)
       |> (fn fields -> struct(State, fields) end).()
 
-    WebSockex.start_link(state.url, __MODULE__, state,
-      name: via(state.registry, :"sg_prod_#{state.tenant}_#{state.namespace}_#{state.topic}")
-    )
+    server_opts =
+      args
+      |> Stargate.Connection.auth_settings()
+      |> Keyword.put(
+        :name,
+        via(state.registry, :"sg_prod_#{state.tenant}_#{state.namespace}_#{state.topic}")
+      )
+
+    WebSockex.start_link(state.url, __MODULE__, state, server_opts)
   end
 
   @impl WebSockex

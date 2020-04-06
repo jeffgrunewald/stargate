@@ -139,9 +139,15 @@ defmodule Stargate.Receiver do
       |> Map.merge(setup_state)
       |> (fn fields -> struct(State, fields) end).()
 
-    WebSockex.start_link(state.url, __MODULE__, state,
-      name: via(state.registry, :"sg_#{type}_#{state.tenant}_#{state.namespace}_#{state.topic}")
-    )
+    server_opts =
+      args
+      |> Stargate.Connection.auth_settings()
+      |> Keyword.put(
+        :name,
+        via(state.registry, :"sg_#{type}_#{state.tenant}_#{state.namespace}_#{state.topic}")
+      )
+
+    WebSockex.start_link(state.url, __MODULE__, state, server_opts)
   end
 
   @impl WebSockex
