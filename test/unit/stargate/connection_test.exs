@@ -58,21 +58,17 @@ defmodule Stargate.ConnectionTest do
   describe "auth settings" do
     test "generates valid authentication options" do
       token = "jwt-token"
-
-      ssl_opts = [
-        cacertfile: "/certs/ca.pem",
-        certfile: "/certs/cert.pem",
-        keyfile: "/certs/key.pem"
-      ]
+      certname = "/certa/ca.pem"
 
       init_args = [
-        ssl_options: ssl_opts,
+        cacerts: certname,
         auth_token: token,
         something: "else"
       ]
 
       assert [
-               ssl_options: ssl_opts,
+               cacerts: certname,
+               insecure: false,
                extra_headers: [{"Authorization", "Bearer " <> token}]
              ] == Stargate.Connection.auth_settings(init_args)
     end

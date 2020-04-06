@@ -191,13 +191,7 @@ producer or receiver connection:
 
 ```elixir
   options = [
-    ...
-    ssl_options: [
-      cacertfile: /certificates/cacert.pem,
-      certfile: /certificates/cert.pem,
-      keyfile: /certificates/key.pem
-    ],
-    ...
+    cacerts: "/certificates/cacert.pem"
   ]
 ```
 

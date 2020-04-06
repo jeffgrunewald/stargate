@@ -210,7 +210,10 @@ defmodule Stargate.Producer do
         via(state.registry, :"sg_prod_#{state.tenant}_#{state.namespace}_#{state.topic}")
       )
 
-    WebSockex.start_link(state.url, __MODULE__, state, server_opts)
+    state.url
+    |> URI.parse()
+    |> WebSockex.Conn.new()
+    |> WebSockex.start_link(__MODULE__, state, server_opts)
   end
 
   @impl WebSockex
