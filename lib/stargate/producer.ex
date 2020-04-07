@@ -211,6 +211,7 @@ defmodule Stargate.Producer do
 
     state.url
     |> WebSockex.Conn.new(conn_opts)
+    |> IO.inspect(label: :producer_label)
     |> WebSockex.start_link(__MODULE__, state, server_opts)
   end
 
