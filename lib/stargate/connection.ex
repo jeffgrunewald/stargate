@@ -15,6 +15,15 @@ defmodule Stargate.Connection do
           topic: String.t()
         }
 
+  @enhanced_web_socketex_conn_opts [
+    :auth_token,
+    :cacerts,
+    :insecure,
+    :socket_connect_timeout,
+    :socket_recv_timeout,
+    :extra_headers
+  ]
+
   @doc """
   The Connection using macro provides the common websocket connection
   and keepalive functionality into a single line for replicating connection
@@ -91,22 +100,34 @@ defmodule Stargate.Connection do
   end
 
   @doc """
-  Parses the keyword list configuration passed to a websocket and constructs the
-  authentication options, either SSL or token-based, to be passed to the websocket
-  process.
+  Parses the keyword list configuration as options to be passed to
+  `WebSocketex.Conn.new/2`.
+
+  In addition to all of the supported options, `auth_token` may be passed,
+  which will be added as the `Authorization: Bearer <token>` header in the
+  `extra_headers`.
+
+  All options besides `auth_token` and those supported by
+  `WebSocketex.Conn.new/2` will be removed from the resulting keyword list.
   """
-  @spec auth_settings(keyword()) :: keyword()
-  def auth_settings(opts) do
+  @spec web_socketex_conn_settings(opts :: keyword()) :: keyword()
+  def web_socketex_conn_settings(opts) do
     opts
-    |> Keyword.take([:cacerts, :auth_token])
-    |> Enum.flat_map(&transform_auth/1)
+    |> Keyword.take(@enhanced_web_socketex_conn_opts)
+    |> Enum.reduce([], &transform_web_socketex_conn_settings/2)
   end
 
-  defp transform_auth({:cacerts, _} = cacerts), do: [cacerts, insecure: false]
-
-  defp transform_auth({:auth_token, token}) do
-    [{:extra_headers, [{"Authorization", "Bearer " <> token}]}]
+  defp transform_web_socketex_conn_settings({:extra_headers, headers}, config)
+       when is_list(headers) do
+    Keyword.update(config, :extra_headers, headers, &(&1 ++ headers))
   end
+
+  defp transform_web_socketex_conn_settings({:auth_token, token}, config) when is_binary(token) do
+    header = {"Authorization", "Bearer " <> token}
+    Keyword.update(config, :extra_headers, [header], &[header | &1])
+  end
+
+  defp transform_web_socketex_conn_settings(setting, config), do: [setting | config]
 
   defp format_host([{host, port}]), do: "#{host}:#{port}"
   defp format_host({host, port}), do: "#{host}:#{port}"

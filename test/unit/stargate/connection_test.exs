@@ -62,15 +62,20 @@ defmodule Stargate.ConnectionTest do
 
       init_args = [
         cacerts: certname,
+        insecure: false,
         auth_token: token,
+        extra_headers: [{"X-Some-Header", "Some-Value"}],
         something: "else"
       ]
 
       assert [
-               cacerts: certname,
                insecure: false,
-               extra_headers: [{"Authorization", "Bearer " <> token}]
-             ] == Stargate.Connection.auth_settings(init_args)
+               cacerts: certname,
+               extra_headers: [
+                 {"Authorization", "Bearer " <> token},
+                 {"X-Some-Header", "Some-Value"}
+               ]
+             ] == Stargate.Connection.web_socketex_conn_settings(init_args)
     end
   end
 
