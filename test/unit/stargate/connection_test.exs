@@ -2,7 +2,7 @@ defmodule Stargate.ConnectionTest do
   use ExUnit.Case
 
   setup do
-    port = Enum.random(49152..65535)
+    port = Enum.random(49_152..65_535)
 
     {:ok, server} = MockSocket.Supervisor.start_link(port: port, path: "ws_test", source: self())
     {:ok, client} = SampleClient.start_link(port: port, path: "ws_test")
