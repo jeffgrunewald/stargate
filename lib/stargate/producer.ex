@@ -43,7 +43,7 @@ defmodule Stargate.Producer do
               optional(:replicationClusters) => [String.t()]
             }
 
-  @typedoc """
+  @doc """
   Produce a message or list of messages to the cluster by producer URL.
   This is good for irregular and/or ad hoc producer needs that do not require
   a persistent websocket connection and ideally with few to no query parameters
