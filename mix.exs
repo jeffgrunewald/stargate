@@ -6,7 +6,7 @@ defmodule Stargate.MixProject do
   def project() do
     [
       app: :stargate,
-      version: "0.1.0",
+      version: "0.1.1",
       elixir: "~> 1.9",
       start_permanent: Mix.env() == :prod,
       deps: deps(),
@@ -23,21 +23,21 @@ defmodule Stargate.MixProject do
 
   def application() do
     [
-      extra_applications: [:logger]
+      extra_applications: [:logger, :crypto]
     ]
   end
 
   defp deps() do
     [
-      {:dialyxir, "~> 1.0.0-rc.7", only: :dev, runtime: false},
-      {:divo, "~> 1.1", only: [:dev, :integration]},
-      {:divo_pulsar, "~> 0.1.1", only: [:dev, :integration]},
-      {:ex_doc, "~> 0.21.0", only: :dev},
-      {:gen_stage, "~> 0.14.0"},
-      {:jason, "~> 1.1"},
-      {:plug_cowboy, "~> 2.1.0", only: [:test, :integration]},
-      {:puid, "~> 1.0"},
-      {:websockex, "~> 0.4.0"}
+      {:dialyxir, "1.0.0", only: :dev, runtime: false},
+      {:divo_pulsar, "0.1.2", only: [:dev, :integration]},
+      {:ex_doc, "0.23.0", only: :dev},
+      {:gen_stage, "1.0.0"},
+      {:jason, "1.2.2"},
+      {:plug_cowboy, "2.4.1", only: [:test, :integration]},
+      {:puid, "1.1.1"},
+      {:websockex, "0.4.2"},
+      {:credo, "1.5.4", only: [:dev, :test], runtime: false}
     ]
   end
 

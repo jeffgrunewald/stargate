@@ -7,7 +7,7 @@ defmodule Stargate.Receiver.AcknowledgerTest do
     topic = "blorth"
     reg_name = :sg_reg_ack_test
     type = :reader
-    port = Enum.random(49152..65535)
+    port = Enum.random(49_152..65_535)
     path = "ws/v2/reader/persistent/#{tenant}/#{ns}/#{topic}"
 
     opts = [
