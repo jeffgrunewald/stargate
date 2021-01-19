@@ -2,7 +2,7 @@ name: Master
 on:
   push:
     branches:
-      - master
+      - main
 jobs:
   dialyzer:
     name: Cache PLT
@@ -22,7 +22,7 @@ jobs:
         uses: actions/cache@v1
         with:
           path: .dialyzer
-          key: plt-master
+          key: plt-main
       - name: Run dialyzer
         run: |
           mix dialyzer

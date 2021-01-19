@@ -2,7 +2,7 @@ name: CI
 on:
   pull_request:
     branches:
-      - master
+      - main
 jobs:
   unit:
     name: Unit Test
@@ -54,7 +54,7 @@ jobs:
           key: plt-${{ github.head_ref }}
           restore-keys: |
             plt-${{ github.base_ref }}
-            plt-master
+            plt-main
             plt-
       - name: Get dependencies
         run: |
