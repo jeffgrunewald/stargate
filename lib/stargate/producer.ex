@@ -14,6 +14,12 @@ defmodule Stargate.Producer do
   alias Stargate.Producer.{Acknowledger, QueryParams}
 
   @typedoc """
+  A URL defining the host and topic to which a Stargate producer can
+  connect for sending messages.
+  """
+  @type url() :: String.t()
+
+  @typedoc """
   A producer websocket process identified by a pid or via tuple.
   The atom key for identifying the producer in the via tuple is of
   the form `:"sg_prod_<tenant>_<namespace>_<topic>`.
@@ -44,22 +50,25 @@ defmodule Stargate.Producer do
             }
 
   @doc """
-  Produce a message or list of messages to the cluster by producer URL.
-  This is good for irregular and/or ad hoc producer needs that do not require
+  Produce a message or list of messages to the cluster by producer URL or producer process.
+  Messages can be any of the accepted forms (see `message` type).
+
+  Producing by URL is good for irregular and/or ad hoc producer needs that do not require
   a persistent websocket connection and ideally with few to no query parameters
-  to configure producer options from the default.
+  to configure producer options from the default. For higher volume producing, a persistent
+  connection with an addressable producer process is recommended.
 
   Once the message(s) is produced, the calling process automatically blocks until
   it receives acknowledgement from the cluster that the message(s) has been received.
   """
-  @spec produce(String.t(), message() | [message()]) :: :ok | {:error, term()}
-  def produce(url, message) when is_binary(url) do
+  @spec produce(url() | producer(), message() | [message()]) :: :ok | {:error, term()}
+  def produce(url, messages) when is_binary(url) do
     with [protocol, _, host, _, _, _, persistence, tenant, ns, topic | _] <-
            String.split(url, "/"),
          name when is_atom(name) <- temp_produce_name(tenant, ns, topic),
          opts <- temp_producer_opts(name, protocol, host, persistence, tenant, ns, topic),
          {:ok, temp_producer} = Stargate.Supervisor.start_link(opts),
-         :ok = produce(via(:"sg_reg_#{name}", :"sg_prod_#{tenant}_#{ns}_#{topic}"), message) do
+         :ok = produce(via(:"sg_reg_#{name}", :"sg_prod_#{tenant}_#{ns}_#{topic}"), messages) do
       Process.unlink(temp_producer)
       Supervisor.stop(temp_producer)
       :ok
@@ -69,26 +78,10 @@ defmodule Stargate.Producer do
     end
   end
 
-  @doc """
-  Produce a list of messages to a Stargate producer process. Messages can be any
-  of the accepted forms (see `message` type).
-
-  Once the message(s) is produced, the calling process automatically blocks until
-  it receives acknowledgement from the cluster that the message(s) has been received.
-  """
-  @spec produce(producer(), [message()]) :: :ok | {:error, term()}
   def produce(producer, messages) when is_list(messages) do
     Enum.each(messages, &produce(producer, &1))
   end
 
-  @doc """
-  Produce a single message to a Stargate producer process. Messages can be any
-  of the accepted forms (see `message` type).
-
-  Once the message(s) is produced, the calling process automatically blocks until
-  it receives acknowledgement from the cluster that the message(s) has been received.
-  """
-  @spec produce(producer(), message()) :: :ok | {:error, term()}
   def produce(producer, message) do
     {payload, ctx} = construct_payload(message)
 
@@ -109,21 +102,12 @@ defmodule Stargate.Producer do
   message was received by the cluster successfully. This is used to avoid blocking the
   calling process for performance reasons.
   """
-  @spec produce(producer(), [message()], {module(), atom(), [term()]}) :: :ok | {:error, term()}
+  @spec produce(producer(), message() | [message()], {module(), atom(), [term()]}) ::
+          :ok | {:error, term()}
   def produce(producer, messages, mfa) when is_list(messages) do
     Enum.each(messages, &produce(producer, &1, mfa))
   end
 
-  @doc """
-  Produce a message to a Stargate producer process. Messages can be any of the accepted
-  forms (see `message` type).
-
-  When calling `produce/3` the third argument must be an MFA tuple which is used by
-  the producer's acknowledger process to asynchronously perform acknowledgement that the
-  message was received by the cluster successfully. This is used to avoid blocking the
-  calling process for performance reasons.
-  """
-  @spec produce(producer(), message(), {module(), atom(), [term()]}) :: :ok | {:error, term()}
   def produce(producer, message, mfa) do
     {payload, ctx} = construct_payload(message)
 
