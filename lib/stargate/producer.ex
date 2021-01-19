@@ -102,7 +102,8 @@ defmodule Stargate.Producer do
   message was received by the cluster successfully. This is used to avoid blocking the
   calling process for performance reasons.
   """
-  @spec produce(producer(), message() | [message()], {module(), atom(), [term()]}) :: :ok | {:error, term()}
+  @spec produce(producer(), message() | [message()], {module(), atom(), [term()]}) ::
+          :ok | {:error, term()}
   def produce(producer, messages, mfa) when is_list(messages) do
     Enum.each(messages, &produce(producer, &1, mfa))
   end
