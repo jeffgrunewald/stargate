@@ -59,8 +59,8 @@ by the cluster.
 To start a supervised producer, call something like the following within your application:
 ```elixir
 opts = [
-  name: my_producer,               optional \\ default :default
-  host: [example.com: 8080],
+  name: :my_producer,               optional \\ default :default
+  host: ["example.com": 8080],
   protocol: "ws",                     optional \\ default ws
   producer: [
     persistence: "persistent",        optional \\ default persistent
@@ -96,8 +96,8 @@ To consume messages from Pulsar via Stargate, your application needs to create a
 process by calling something like the following:
 ```elixir
   opts = [
-    name: my_reader,               optional \\ default :default
-    host: [example.com: 8080],
+    name: :my_reader,               optional \\ default :default
+    host: ["example.com": 8080],
     protocol: "ws",                  optional \\ default ws
     reader: [
       persistence: "persistent",     optional \\ default persistent
@@ -116,8 +116,8 @@ process by calling something like the following:
   ]
 
   opts = [
-    name: my_consumer,                optional \\ default :default
-    host: [example.com: 8080],
+    name: :my_consumer,                optional \\ default :default
+    host: ["example.com": 8080],
     protocol: "ws",                   optional \\ default ws
     consumer: [
       persistence: "persistent",      optional \\ default persistent
@@ -193,9 +193,9 @@ producer or receiver connection:
   options = [
     ...
     ssl_options: [
-      cacertfile: /certificates/cacert.pem,
-      certfile: /certificates/cert.pem,
-      keyfile: /certificates/key.pem
+      cacertfile: "/certificates/cacert.pem",
+      certfile: "/certificates/cert.pem",
+      keyfile: "/certificates/key.pem"
     ],
     ...
   ]
