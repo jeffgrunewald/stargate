@@ -1,4 +1,6 @@
 defmodule MockProducer do
+  @moduledoc false
+
   use GenStage
 
   def start_link(init_args) do

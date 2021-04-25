@@ -1,4 +1,6 @@
 defmodule IntegrationTestHandler do
+  @moduledoc false
+
   use Stargate.Receiver.MessageHandler
 
   def handle_message(%{payload: payload}) do

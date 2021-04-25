@@ -67,8 +67,8 @@ defmodule Stargate.Producer do
            String.split(url, "/"),
          name when is_atom(name) <- temp_produce_name(tenant, ns, topic),
          opts <- temp_producer_opts(name, protocol, host, persistence, tenant, ns, topic),
-         {:ok, temp_producer} = Stargate.Supervisor.start_link(opts),
-         :ok = produce(via(:"sg_reg_#{name}", :"sg_prod_#{tenant}_#{ns}_#{topic}"), messages) do
+         {:ok, temp_producer} <- Stargate.Supervisor.start_link(opts),
+         :ok <- produce(via(:"sg_reg_#{name}", :"sg_prod_#{tenant}_#{ns}_#{topic}"), messages) do
       Process.unlink(temp_producer)
       Supervisor.stop(temp_producer)
       :ok

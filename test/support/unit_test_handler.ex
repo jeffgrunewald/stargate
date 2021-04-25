@@ -1,4 +1,6 @@
 defmodule UnitTestHandler do
+  @moduledoc false
+
   use Stargate.Receiver.MessageHandler
 
   def init({source, expected}) do

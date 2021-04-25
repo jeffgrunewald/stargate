@@ -1,4 +1,6 @@
 defmodule MockSocket.Supervisor do
+  @moduledoc false
+
   use Supervisor
 
   def start_link(init_args) do
