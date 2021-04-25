@@ -9,11 +9,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
-      - uses: actions/setup-elixir@v1
+      - uses: erlef/setup-beam@v1
         with:
           otp-version: 23.2
-          elixir-version: 1.11.0
-      - name: Get depedencies
+          elixir-version: 1.11
+      - name: Get dependencies
         run: |
           mix local.rebar --force
           mix local.hex --force
@@ -26,10 +26,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
-      - uses: actions/setup-elixir@v1
+      - uses: erlef/setup-beam@v1
         with:
           otp-version: 23.2
-          elixir-version: 1.11.0
+          elixir-version: 1.11
       - name: Get dependencies
         run: |
           mix local.rebar --force
@@ -43,10 +43,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
-      - uses: actions/setup-elixir@v1
+      - uses: erlef/setup-beam@v1
         with:
           otp-version: 23.2
-          elixir-version: 1.11.0
+          elixir-version: 1.11
       - name: Retrieve cached PLT
         uses: actions/cache@v1
         with:
