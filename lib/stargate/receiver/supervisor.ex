@@ -24,7 +24,7 @@ defmodule Stargate.Receiver.Supervisor do
     topic = Keyword.fetch!(args, :topic)
 
     Supervisor.start_link(__MODULE__, args,
-      name: via(registry, :"sg_#{type}_sup_#{tenant}_#{namespace}_#{topic}")
+      name: via(registry, {:"#{type}_sup", "#{tenant}", "#{namespace}", "#{topic}"})
     )
   end
 
@@ -59,7 +59,7 @@ defmodule Stargate.Receiver.Supervisor do
     tenant = Keyword.fetch!(init_args, :tenant)
     ns = Keyword.fetch!(init_args, :namespace)
     topic = Keyword.fetch!(init_args, :topic)
-    name = :"sg_processor_#{tenant}_#{ns}_#{topic}_#{number}"
+    name = {:processor, "#{tenant}", "#{ns}", "#{topic}_#{number}"}
     named_args = Keyword.put(init_args, :processor_name, name)
 
     Supervisor.child_spec({Stargate.Receiver.Processor, named_args}, id: name)

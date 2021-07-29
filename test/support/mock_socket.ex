@@ -4,7 +4,7 @@ defmodule MockSocket.Supervisor do
   use Supervisor
 
   def start_link(init_args) do
-    Supervisor.start_link(__MODULE__, init_args, name: __MODULE__)
+    Supervisor.start_link(__MODULE__, init_args)
   end
 
   def init(init_args) do

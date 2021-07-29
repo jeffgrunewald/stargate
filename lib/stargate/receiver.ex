@@ -144,7 +144,10 @@ defmodule Stargate.Receiver do
       |> Stargate.Connection.auth_settings()
       |> Keyword.put(
         :name,
-        via(state.registry, :"sg_#{type}_#{state.tenant}_#{state.namespace}_#{state.topic}")
+        via(
+          state.registry,
+          {:"#{type}", "#{state.tenant}", "#{state.namespace}", "#{state.topic}"}
+        )
       )
 
     WebSockex.start_link(state.url, __MODULE__, state, server_opts)
@@ -156,7 +159,7 @@ defmodule Stargate.Receiver do
 
     :ok =
       state.registry
-      |> via(:"sg_dispatcher_#{tenant}_#{ns}_#{topic}")
+      |> via({:dispatcher, "#{tenant}", "#{ns}", "#{topic}"})
       |> Dispatcher.push(msg)
 
     {:ok, state}

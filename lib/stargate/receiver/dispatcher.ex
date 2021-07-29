@@ -54,7 +54,7 @@ defmodule Stargate.Receiver.Dispatcher do
     topic = Keyword.fetch!(init_args, :topic)
 
     GenStage.start_link(__MODULE__, init_args,
-      name: via(registry, :"sg_dispatcher_#{tenant}_#{ns}_#{topic}")
+      name: via(registry, {:dispatcher, "#{tenant}", "#{ns}", "#{topic}"})
     )
   end
 
@@ -77,7 +77,7 @@ defmodule Stargate.Receiver.Dispatcher do
       namespace: ns,
       topic: topic,
       pull_mode: pull,
-      receiver: :"sg_#{type}_#{tenant}_#{ns}_#{topic}"
+      receiver: {:"#{type}", "#{tenant}", "#{ns}", "#{topic}"}
     }
 
     {:ok, _receiver} = Stargate.Receiver.start_link(init_args)

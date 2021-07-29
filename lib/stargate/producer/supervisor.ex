@@ -22,7 +22,7 @@ defmodule Stargate.Producer.Supervisor do
     topic = Keyword.fetch!(args, :topic)
 
     Supervisor.start_link(__MODULE__, args,
-      name: via(registry, :"sg_prod_sup_#{tenant}_#{namespace}_#{topic}")
+      name: via(registry, {:producer_sup, "#{tenant}", "#{namespace}", "#{topic}"})
     )
   end
 
@@ -35,7 +35,10 @@ defmodule Stargate.Producer.Supervisor do
     tenant = Keyword.fetch!(args, :tenant)
     namespace = Keyword.fetch!(args, :namespace)
     topic = Keyword.fetch!(args, :topic)
-    Supervisor.child_spec(super(args), id: :"sg_prod_sup_#{tenant}_#{namespace}_#{topic}")
+
+    Supervisor.child_spec(super(args),
+      id: {:producer_sup, "#{tenant}", "#{namespace}", "#{topic}"}
+    )
   end
 
   @impl Supervisor

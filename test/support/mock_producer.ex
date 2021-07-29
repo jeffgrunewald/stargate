@@ -12,8 +12,8 @@ defmodule MockProducer do
 
     name =
       case type do
-        :dispatcher -> :"sg_dispatcher_#{tenant}_#{ns}_#{topic}"
-        :processor -> :"sg_processor_#{tenant}_#{ns}_#{topic}_0"
+        :dispatcher -> {:dispatcher, "#{tenant}", "#{ns}", "#{topic}"}
+        :processor -> {:processor, "#{tenant}", "#{ns}", "#{topic}_0"}
       end
 
     GenStage.start_link(__MODULE__, init_args, name: {:via, Registry, {registry, name}})

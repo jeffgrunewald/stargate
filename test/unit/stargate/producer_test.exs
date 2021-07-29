@@ -103,7 +103,9 @@ defmodule Stargate.ProducerTest do
       ]
 
       {:ok, _supervisor} = Stargate.Supervisor.start_link(opts)
-      [{producer, _}] = Registry.lookup(:sg_reg_produce_3_test, :sg_prod_default_public_foobar)
+
+      [{producer, _}] =
+        Registry.lookup(:sg_reg_produce_3_test, {:producer, "default", "public", "foobar"})
 
       test = self()
 

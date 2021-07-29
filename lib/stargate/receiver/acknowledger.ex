@@ -43,7 +43,7 @@ defmodule Stargate.Receiver.Acknowledger do
     topic = Keyword.fetch!(init_args, :topic)
 
     GenStage.start_link(__MODULE__, init_args,
-      name: via(registry, :"sg_#{type}_ack_#{tenant}_#{ns}_#{topic}")
+      name: via(registry, {:"#{type}_ack", "#{tenant}", "#{ns}", "#{topic}"})
     )
   end
 
@@ -62,7 +62,7 @@ defmodule Stargate.Receiver.Acknowledger do
       tenant: tenant,
       namespace: ns,
       topic: topic,
-      receiver: :"sg_#{type}_#{tenant}_#{ns}_#{topic}"
+      receiver: {:"#{type}", "#{tenant}", "#{ns}", "#{topic}"}
     }
 
     subscriptions = subscriptions(registry, tenant, ns, topic, processors)
@@ -96,7 +96,7 @@ defmodule Stargate.Receiver.Acknowledger do
   end
 
   defp subscription_spec(number, registry, tenant, namespace, topic) do
-    producer = via(registry, :"sg_processor_#{tenant}_#{namespace}_#{topic}_#{number}")
+    producer = via(registry, {:processor, "#{tenant}", "#{namespace}", "#{topic}_#{number}"})
     {producer, []}
   end
 end
