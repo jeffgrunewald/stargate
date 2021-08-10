@@ -146,7 +146,8 @@ defmodule Stargate.Receiver do
         :name,
         via(
           state.registry,
-          {:"#{type}", "#{state.tenant}", "#{state.namespace}", "#{state.topic}"}
+          {:"#{type}", "#{state.persistence}", "#{state.tenant}", "#{state.namespace}",
+           "#{state.topic}"}
         )
       )
 
@@ -154,12 +155,15 @@ defmodule Stargate.Receiver do
   end
 
   @impl WebSockex
-  def handle_frame({:text, msg}, %{tenant: tenant, namespace: ns, topic: topic} = state) do
+  def handle_frame(
+        {:text, msg},
+        %{persistence: persistence, tenant: tenant, namespace: ns, topic: topic} = state
+      ) do
     Logger.debug("Received frame : #{inspect(msg)}")
 
     :ok =
       state.registry
-      |> via({:dispatcher, "#{tenant}", "#{ns}", "#{topic}"})
+      |> via({:dispatcher, "#{persistence}", "#{tenant}", "#{ns}", "#{topic}"})
       |> Dispatcher.push(msg)
 
     {:ok, state}

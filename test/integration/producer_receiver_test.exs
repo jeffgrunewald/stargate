@@ -34,7 +34,8 @@ defmodule Stargate.ProducerReceiverTest do
         )
 
       Stargate.produce(
-        {:via, Registry, {:sg_reg_default, {:producer, "#{tenant}", "#{namespace}", "#{topic}"}}},
+        {:via, Registry,
+         {:sg_reg_default, {:producer, "persistent", "#{tenant}", "#{namespace}", "#{topic}"}}},
         input
       )
 
@@ -106,7 +107,8 @@ defmodule Stargate.ProducerReceiverTest do
         )
 
       Stargate.produce(
-        {:via, Registry, {:sg_reg_default, {:producer, "#{tenant}", "#{namespace}", "#{topic}"}}},
+        {:via, Registry,
+         {:sg_reg_default, {:producer, "persistent", "#{tenant}", "#{namespace}", "#{topic}"}}},
         input
       )
 
@@ -158,7 +160,8 @@ defmodule Stargate.ProducerReceiverTest do
         )
 
       Stargate.produce(
-        {:via, Registry, {:sg_reg_default, {:producer, "#{tenant}", "#{namespace}", "#{topic}"}}},
+        {:via, Registry,
+         {:sg_reg_default, {:producer, "persistent", "#{tenant}", "#{namespace}", "#{topic}"}}},
         input
       )
 

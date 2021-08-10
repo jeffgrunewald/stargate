@@ -25,7 +25,9 @@ defmodule Stargate.ReceiverTest do
     {:ok, server} = MockSocket.Supervisor.start_link(port: port, path: path, source: self())
     {:ok, dispatcher} = Stargate.Receiver.Dispatcher.start_link(opts)
     {:ok, consumer} = MockConsumer.start_link(producer: dispatcher, source: self())
-    receiver = {:via, Registry, {reg_name, {:"#{type}", "#{tenant}", "#{ns}", "#{topic}"}}}
+
+    receiver =
+      {:via, Registry, {reg_name, {:"#{type}", "persistent", "#{tenant}", "#{ns}", "#{topic}"}}}
 
     on_exit(fn ->
       Enum.map([registry, server, dispatcher, consumer], &kill/1)

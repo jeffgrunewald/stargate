@@ -24,8 +24,7 @@ defmodule Stargate.Producer do
   The atom key for identifying the producer in the via tuple is of
   the form `:"sg_prod_<tenant>_<namespace>_<topic>`.
   """
-  @type producer ::
-          GenServer.server() | {:via, atom(), {atom(), Stargate.Supervisor.process_key()}}
+  @type producer :: GenServer.server()
 
   @typedoc """
   Pulsar messages produced by Stargate can be any of the following forms:
@@ -68,7 +67,7 @@ defmodule Stargate.Producer do
            String.split(url, "/"),
          opts <- temp_producer_opts(:temp, protocol, host, persistence, tenant, ns, topic),
          {:ok, temp_producer} <- Stargate.Supervisor.start_link(opts),
-         :ok <- produce(via(:sg_reg_temp, {:producer, tenant, ns, topic}), messages) do
+         :ok <- produce(via(:sg_reg_temp, {:producer, persistence, tenant, ns, topic}), messages) do
       Process.unlink(temp_producer)
       Supervisor.stop(temp_producer)
       :ok
@@ -193,7 +192,8 @@ defmodule Stargate.Producer do
         :name,
         via(
           state.registry,
-          {:producer, "#{state.tenant}", "#{state.namespace}", "#{state.topic}"}
+          {:producer, "#{state.persistence}", "#{state.tenant}", "#{state.namespace}",
+           "#{state.topic}"}
         )
       )
 
@@ -205,7 +205,8 @@ defmodule Stargate.Producer do
     Acknowledger.produce(
       via(
         state.registry,
-        {:producer_ack, "#{state.tenant}", "#{state.namespace}", "#{state.topic}"}
+        {:producer_ack, "#{state.persistence}", "#{state.tenant}", "#{state.namespace}",
+         "#{state.topic}"}
       ),
       ctx,
       ack
@@ -225,7 +226,10 @@ defmodule Stargate.Producer do
 
     :ok =
       state.registry
-      |> via({:producer_ack, "#{state.tenant}", "#{state.namespace}", "#{state.topic}"})
+      |> via(
+        {:producer_ack, "#{state.persistence}", "#{state.tenant}", "#{state.namespace}",
+         "#{state.topic}"}
+      )
       |> Acknowledger.ack(response)
 
     {:ok, state}

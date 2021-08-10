@@ -17,12 +17,14 @@ defmodule Stargate.Producer.Supervisor do
   @spec start_link(keyword()) :: GenServer.on_start()
   def start_link(args) do
     registry = Keyword.fetch!(args, :registry)
+    persistence = Keyword.get(args, :persistence, "persistent")
     tenant = Keyword.fetch!(args, :tenant)
     namespace = Keyword.fetch!(args, :namespace)
     topic = Keyword.fetch!(args, :topic)
 
     Supervisor.start_link(__MODULE__, args,
-      name: via(registry, {:producer_sup, "#{tenant}", "#{namespace}", "#{topic}"})
+      name:
+        via(registry, {:producer_sup, "#{persistence}", "#{tenant}", "#{namespace}", "#{topic}"})
     )
   end
 
@@ -32,12 +34,13 @@ defmodule Stargate.Producer.Supervisor do
   """
   @spec child_spec(keyword()) :: Supervisor.child_spec()
   def child_spec(args) do
+    persistence = Keyword.get(args, :persistence, "persistent")
     tenant = Keyword.fetch!(args, :tenant)
     namespace = Keyword.fetch!(args, :namespace)
     topic = Keyword.fetch!(args, :topic)
 
     Supervisor.child_spec(super(args),
-      id: {:producer_sup, "#{tenant}", "#{namespace}", "#{topic}"}
+      id: {:producer_sup, "#{persistence}", "#{tenant}", "#{namespace}", "#{topic}"}
     )
   end
 

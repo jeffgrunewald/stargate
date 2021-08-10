@@ -23,6 +23,7 @@ defmodule Stargate.Receiver.Dispatcher do
     defstruct [
       :type,
       :registry,
+      :persistence,
       :tenant,
       :namespace,
       :topic,
@@ -49,18 +50,20 @@ defmodule Stargate.Receiver.Dispatcher do
   @spec start_link(keyword()) :: GenServer.on_start()
   def start_link(init_args) do
     registry = Keyword.fetch!(init_args, :registry)
+    persistence = Keyword.get(init_args, :persistence, "persistent")
     tenant = Keyword.fetch!(init_args, :tenant)
     ns = Keyword.fetch!(init_args, :namespace)
     topic = Keyword.fetch!(init_args, :topic)
 
     GenStage.start_link(__MODULE__, init_args,
-      name: via(registry, {:dispatcher, "#{tenant}", "#{ns}", "#{topic}"})
+      name: via(registry, {:dispatcher, "#{persistence}", "#{tenant}", "#{ns}", "#{topic}"})
     )
   end
 
   @impl GenStage
   def init(init_args) do
     type = Keyword.fetch!(init_args, :type)
+    persistence = Keyword.get(init_args, :persistence, "persistent")
     tenant = Keyword.fetch!(init_args, :tenant)
     ns = Keyword.fetch!(init_args, :namespace)
     topic = Keyword.fetch!(init_args, :topic)
@@ -73,11 +76,12 @@ defmodule Stargate.Receiver.Dispatcher do
 
     state = %State{
       registry: Keyword.fetch!(init_args, :registry),
+      persistence: persistence,
       tenant: tenant,
       namespace: ns,
       topic: topic,
       pull_mode: pull,
-      receiver: {:"#{type}", "#{tenant}", "#{ns}", "#{topic}"}
+      receiver: {:"#{type}", "#{persistence}", "#{tenant}", "#{ns}", "#{topic}"}
     }
 
     {:ok, _receiver} = Stargate.Receiver.start_link(init_args)

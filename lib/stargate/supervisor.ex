@@ -7,7 +7,7 @@ defmodule Stargate.Supervisor do
   """
   use Supervisor
 
-  @type process_key :: {atom(), String.t(), String.t(), String.t()}
+  @type process_key :: {atom(), String.t(), String.t(), String.t(), String.t()}
 
   @doc """
   Convenience function for working with the Stargate process registry.

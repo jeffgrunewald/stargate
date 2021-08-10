@@ -5,6 +5,7 @@ defmodule MockProducer do
 
   def start_link(init_args) do
     registry = Keyword.get(init_args, :registry)
+    persistence = Keyword.get(init_args, :persistence, "persistent")
     tenant = Keyword.get(init_args, :tenant)
     ns = Keyword.get(init_args, :namespace)
     topic = Keyword.get(init_args, :topic)
@@ -12,8 +13,8 @@ defmodule MockProducer do
 
     name =
       case type do
-        :dispatcher -> {:dispatcher, "#{tenant}", "#{ns}", "#{topic}"}
-        :processor -> {:processor, "#{tenant}", "#{ns}", "#{topic}_0"}
+        :dispatcher -> {:dispatcher, "#{persistence}", "#{tenant}", "#{ns}", "#{topic}"}
+        :processor -> {:processor, "#{persistence}", "#{tenant}", "#{ns}", "#{topic}_0"}
       end
 
     GenStage.start_link(__MODULE__, init_args, name: {:via, Registry, {registry, name}})

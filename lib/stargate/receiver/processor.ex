@@ -81,7 +81,8 @@ defmodule Stargate.Receiver.Processor do
     dispatcher =
       via(
         state.registry,
-        {:dispatcher, "#{state.tenant}", "#{state.namespace}", "#{state.topic}"}
+        {:dispatcher, "#{state.persistence}", "#{state.tenant}", "#{state.namespace}",
+         "#{state.topic}"}
       )
 
     {:ok, handler_state} = state.handler.init(state.handler_init_args)
