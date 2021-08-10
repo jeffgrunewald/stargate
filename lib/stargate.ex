@@ -82,6 +82,23 @@ defmodule Stargate do
   defdelegate produce(url_or_connection, message), to: Stargate.Producer
   defdelegate produce(connection, message, mfa), to: Stargate.Producer
 
+  @type tenant :: String.t()
+  @type namespace :: String.t()
+  @type topic :: String.t()
+  @type persistence :: "persistent" | "non-persistent"
+  @type component :: :producer | :producer_ack | :consumer | :consumer_ack | :reader | :reader_ack
+  @type key_opt :: {:persistence, persistence()} | {:name, atom()} | {:component, component()}
+
+  @spec registry_key(tenant(), namespace(), topic(), [key_opt]) ::
+          {:via, Registry, {atom(), {component(), persistence(), tenant(), namespace(), topic()}}}
+  def registry_key(tenant, namespace, topic, opts \\ []) do
+    name = Keyword.get(opts, :name, :default)
+    component = Keyword.get(opts, :component, :producer)
+    persistence = Keyword.get(opts, :persistence, "persistent")
+
+    {:via, Registry, {:"sg_reg_#{name}", {component, persistence, tenant, namespace, topic}}}
+  end
+
   defmodule Message do
     @moduledoc """
     Defines the Elixir Struct that represents the structure of a Pulsar message.
