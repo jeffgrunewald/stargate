@@ -38,6 +38,31 @@ end
 The docs can be found at [https://hexdocs.pm/stargate](https://hexdocs.pm/stargate).
 
 ## Usage
+### Locating Processes
+Under the hood, Stargate uses the Registry module to create a via-tuple name for each process within a Stargate-
+managed supervision tree. The intended API is to create a top-level `Stargate.Supervisor` and attach option producers
+and receivers under it as needed. When you do this, Stargate creates the top-level supervisor and prepends `:sg_sup_#{name}`
+to the name of the process (defaults to `:default`) as well as a Registry named `:sg_reg_#{name}` (defaults to `:default`).
+All processes spun up under this pair receive a via-tuple name identified by `{via, Registry, {<registry_name>, {<component>,
+<persistence>, <tenant>, <namespace>, <topic>}}}` where component is the type of process (`:producer`, `:consumer`, etc),
+persistence is either "persistent" or "non-persistent", and the remaining values are all strings representing the values supplied
+when creating the topic in Pulsar.
+
+To assist in finding the correct process to send messages to, Stargate provides the `Stargate.registry_key/4` function as a
+helper to calculate this via-tuple easily. When supplying the `Stargate.registry_key(<tenant>, <namespace>, <topic>)`, Stargate
+assumes you're trying to reach the Producer process as this is the process most likely to be called directly (in conjunction within
+`Stargate.produce/2,3`), assumes a persistent topic (because Pulsar assumes topics are persistent by default) and assumes the
+Supervisor and Registry name suffix to be `:default`. If necessary, you can supply a Keyword List of options to customize the
+via-tuple returned by `Stargate.registry_key/4` with a combination of the arguments `:name`, `:component`, `:persistence`.
+
+```elixir
+iex> Stargate.registry_key("foo", "bar", "baz")
+{:via, Registry, {:sg_reg_default, {:producer, "persistent", "foo", "bar", "baz"}}}
+
+iex> Stargate.registry("foo", "bar", "baz", name: :custom, persistence: "non-persistent", component: :consumer)
+{:via, Registry, {:sg_reg_custom, {:consumer, "non-persistent", "foo", "bar", "baz"}}}
+```
+
 ### Produce
 Producing to Pulsar via Stargate is as simple as passing an Erlang term to the produce function. Stargate
 takes care of encoding the message payload with the necessary fields and format required by Pulsar with
@@ -53,7 +78,7 @@ message context is desired (Stargate uses the "context" for tracking receipt of 
 Stargate will clean up the producer processes once the produce has completed.
 
 For persistent producer connections to the cluster, you may also start a supervised tree of processes
-including the socket producer itself and an acknowledger whos job it is to ensure receipt of messages
+including the socket producer itself and an acknowledger, the job of which is to ensure receipt of messages
 by the cluster.
 
 To start a supervised producer, call something like the following within your application:
