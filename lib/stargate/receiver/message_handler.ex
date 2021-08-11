@@ -44,13 +44,13 @@ defmodule Stargate.Receiver.MessageHandler do
 
       def handle_message(message), do: :ack
 
-      def topic(), do: Process.get(:sg_topic)
+      def topic, do: Process.get(:sg_topic)
 
-      def namespace(), do: Process.get(:sg_namespace)
+      def namespace, do: Process.get(:sg_namespace)
 
-      def tenant(), do: Process.get(:sg_tenant)
+      def tenant, do: Process.get(:sg_tenant)
 
-      def persistence(), do: Process.get(:sg_persistence)
+      def persistence, do: Process.get(:sg_persistence)
 
       defoverridable Stargate.Receiver.MessageHandler
     end

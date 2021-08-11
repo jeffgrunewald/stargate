@@ -114,7 +114,7 @@ defmodule SampleClient do
   use Stargate.Connection
 
   def cast(message), do: WebSockex.cast(__MODULE__, {:send, message})
-  def ping_socket(), do: send(__MODULE__, :send_ping)
+  def ping_socket, do: send(__MODULE__, :send_ping)
 
   def start_link(init_args) do
     port = Keyword.get(init_args, :port)

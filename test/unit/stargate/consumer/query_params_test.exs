@@ -1,11 +1,13 @@
 defmodule Stargate.Consumer.QueryParamsTest do
   use ExUnit.Case
 
+  alias Stargate.Consumer.QueryParams
+
   describe "Consumer query params" do
     test "returns default (empty) query params" do
       input = %{}
 
-      assert "" == Stargate.Consumer.QueryParams.build_params(input)
+      assert "" == QueryParams.build_params(input)
     end
 
     test "returns custom query params" do
@@ -19,7 +21,7 @@ defmodule Stargate.Consumer.QueryParamsTest do
       result =
         "ackTimeoutMillis=2000&pullMode=true&receiverQueueSize=500&subscriptionType=Exclusive"
 
-      assert result == Stargate.Consumer.QueryParams.build_params(input)
+      assert result == QueryParams.build_params(input)
     end
   end
 end

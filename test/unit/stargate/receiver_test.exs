@@ -1,8 +1,10 @@
 defmodule Stargate.ReceiverTest do
   use ExUnit.Case
 
+  alias Stargate.Receiver.Dispatcher
+
   setup do
-    reg_name = :sg_reg_receiver_test
+    reg_name = :receiver_test
     type = :consumer
     tenant = "default"
     ns = "public"
@@ -13,7 +15,7 @@ defmodule Stargate.ReceiverTest do
 
     opts = [
       host: [localhost: port],
-      registry: reg_name,
+      registry: :"sg_reg_#{reg_name}",
       type: type,
       tenant: tenant,
       namespace: ns,
@@ -21,13 +23,12 @@ defmodule Stargate.ReceiverTest do
       subscription: subscription
     ]
 
-    {:ok, registry} = Registry.start_link(keys: :unique, name: reg_name)
+    {:ok, registry} = Registry.start_link(keys: :unique, name: :"sg_reg_#{reg_name}")
     {:ok, server} = MockSocket.Supervisor.start_link(port: port, path: path, source: self())
-    {:ok, dispatcher} = Stargate.Receiver.Dispatcher.start_link(opts)
+    {:ok, dispatcher} = Dispatcher.start_link(opts)
     {:ok, consumer} = MockConsumer.start_link(producer: dispatcher, source: self())
 
-    receiver =
-      {:via, Registry, {reg_name, {:"#{type}", "persistent", "#{tenant}", "#{ns}", "#{topic}"}}}
+    receiver = Stargate.registry_key(tenant, ns, topic, component: type, name: reg_name)
 
     on_exit(fn ->
       Enum.map([registry, server, dispatcher, consumer], &kill/1)

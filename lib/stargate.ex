@@ -85,7 +85,7 @@ defmodule Stargate do
   @type tenant :: String.t()
   @type namespace :: String.t()
   @type topic :: String.t()
-  @type persistence :: "persistent" | "non-persistent"
+  @type persistence :: String.t()
   @type component :: :producer | :producer_ack | :consumer | :consumer_ack | :reader | :reader_ack
   @type key_opt :: {:persistence, persistence()} | {:name, atom()} | {:component, component()}
 

@@ -33,11 +33,8 @@ defmodule Stargate.ProducerReceiverTest do
           ]
         )
 
-      Stargate.produce(
-        {:via, Registry,
-         {:sg_reg_default, {:producer, "persistent", "#{tenant}", "#{namespace}", "#{topic}"}}},
-        input
-      )
+      Stargate.registry_key(tenant, namespace, topic)
+      |> Stargate.produce(input)
 
       Supervisor.stop(producer)
 
@@ -106,11 +103,8 @@ defmodule Stargate.ProducerReceiverTest do
           consumer: consumer_opts
         )
 
-      Stargate.produce(
-        {:via, Registry,
-         {:sg_reg_default, {:producer, "persistent", "#{tenant}", "#{namespace}", "#{topic}"}}},
-        input
-      )
+      Stargate.registry_key(tenant, namespace, topic)
+      |> Stargate.produce(input)
 
       Enum.random([consumer1, consumer2]) |> Supervisor.stop()
 
@@ -159,11 +153,8 @@ defmodule Stargate.ProducerReceiverTest do
           ]
         )
 
-      Stargate.produce(
-        {:via, Registry,
-         {:sg_reg_default, {:producer, "persistent", "#{tenant}", "#{namespace}", "#{topic}"}}},
-        input
-      )
+      Stargate.registry_key(tenant, namespace, topic)
+      |> Stargate.produce(input)
 
       assert_async(10, 150, fn ->
         result = Agent.get(:integration_store, fn store -> store end) |> Enum.sort()

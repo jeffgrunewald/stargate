@@ -1,6 +1,8 @@
 defmodule Stargate.Receiver.AcknowledgerTest do
   use ExUnit.Case
 
+  alias Stargate.Receiver.Acknowledger, as: RecAcknowledger
+
   setup do
     tenant = "public"
     ns = "default"
@@ -34,7 +36,7 @@ defmodule Stargate.Receiver.AcknowledgerTest do
       )
 
     {:ok, receiver} = Stargate.Receiver.start_link(opts)
-    {:ok, acknowledger} = Stargate.Receiver.Acknowledger.start_link(opts)
+    {:ok, acknowledger} = RecAcknowledger.start_link(opts)
 
     on_exit(fn ->
       Enum.each([registry, producer, receiver, acknowledger, server], &kill/1)
