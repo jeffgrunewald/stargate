@@ -49,6 +49,7 @@ jobs:
           elixir-version: 1.11
       - name: Retrieve cached PLT
         uses: actions/cache@v1
+        id: plt-cache
         with:
           path: .dialyzer
           key: plt-${{ github.head_ref }}
@@ -64,6 +65,13 @@ jobs:
       - name: Run formatter
         run: |
           mix format --check-formatted
+
+      - name: Create PLTs
+        if: ${{ steps.plt-cache.outputs.cache-hit != 'true' }}
+        run: |
+          mkdir -p .dialyzer
+          mix dialyzer --plt
+
       - name: Run dialyzer
         run: |
           mix dialyzer

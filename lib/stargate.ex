@@ -82,6 +82,39 @@ defmodule Stargate do
   defdelegate produce(url_or_connection, message), to: Stargate.Producer
   defdelegate produce(connection, message, mfa), to: Stargate.Producer
 
+  @type tenant :: String.t()
+  @type namespace :: String.t()
+  @type topic :: String.t()
+  @type persistence :: String.t()
+  @type component :: :producer | :producer_ack | :consumer | :consumer_ack | :reader | :reader_ack
+  @type key_opt ::
+          {:persistence, persistence()}
+          | {:name, atom()}
+          | {:registry, atom()}
+          | {:component, component()}
+
+  @doc """
+  Generate the via-tuple needed for addressing a process within the Stargate supervision tree. Expects
+  at minimum the tenant, namespace, and topic of the process being addressed and assumes by default the
+  desired process is the Producer of a persistent topic managed by the default supervisor/registry.
+
+  iex> Stargate.registry_key("foo", "bar", "baz")
+  {:via, Registry, {:sg_reg_default, {:producer, "persistent", "foo", "bar", "baz"}}}
+
+  iex> Stargate.registry_key("foo", "bar", "baz", registry: MyCustom.Registry, persistence: "non-persistent", component: :producer_ack)
+  {:via, Registry, {MyCustom.Registry, {:producer_ack, "non-persistent", "foo", "bar", "baz"}}}
+  """
+  @spec registry_key(tenant(), namespace(), topic(), [key_opt]) ::
+          {:via, Registry, {atom(), {component(), persistence(), tenant(), namespace(), topic()}}}
+  def registry_key(tenant, namespace, topic, opts \\ []) do
+    name = Keyword.get(opts, :name, :default)
+    registry = Keyword.get(opts, :registry) || :"sg_reg_#{name}"
+    component = Keyword.get(opts, :component, :producer)
+    persistence = Keyword.get(opts, :persistence, "persistent")
+
+    {:via, Registry, {registry, {component, persistence, tenant, namespace, topic}}}
+  end
+
   defmodule Message do
     @moduledoc """
     Defines the Elixir Struct that represents the structure of a Pulsar message.

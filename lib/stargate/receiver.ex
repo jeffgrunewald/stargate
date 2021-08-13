@@ -144,19 +144,26 @@ defmodule Stargate.Receiver do
       |> Stargate.Connection.auth_settings()
       |> Keyword.put(
         :name,
-        via(state.registry, :"sg_#{type}_#{state.tenant}_#{state.namespace}_#{state.topic}")
+        via(
+          state.registry,
+          {:"#{type}", "#{state.persistence}", "#{state.tenant}", "#{state.namespace}",
+           "#{state.topic}"}
+        )
       )
 
     WebSockex.start_link(state.url, __MODULE__, state, server_opts)
   end
 
   @impl WebSockex
-  def handle_frame({:text, msg}, %{tenant: tenant, namespace: ns, topic: topic} = state) do
+  def handle_frame(
+        {:text, msg},
+        %{persistence: persistence, tenant: tenant, namespace: ns, topic: topic} = state
+      ) do
     Logger.debug("Received frame : #{inspect(msg)}")
 
     :ok =
       state.registry
-      |> via(:"sg_dispatcher_#{tenant}_#{ns}_#{topic}")
+      |> via({:dispatcher, "#{persistence}", "#{tenant}", "#{ns}", "#{topic}"})
       |> Dispatcher.push(msg)
 
     {:ok, state}

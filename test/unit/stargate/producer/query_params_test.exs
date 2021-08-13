@@ -1,11 +1,13 @@
 defmodule Stargate.Producer.QueryParamsTest do
   use ExUnit.Case
 
+  alias Stargate.Producer.QueryParams
+
   describe "Producer query params" do
     test "returns default (empty) query params" do
       input = %{}
 
-      assert "" == Stargate.Producer.QueryParams.build_params(input)
+      assert "" == QueryParams.build_params(input)
     end
 
     test "returns custom query params" do
@@ -20,7 +22,7 @@ defmodule Stargate.Producer.QueryParamsTest do
       result =
         "compressionType=ZLIB&initialSequenceId=2500000000&messageRoutingMode=RoundRobinPartition&producerName=foobar&sendTimeoutMillis=3000"
 
-      assert result == Stargate.Producer.QueryParams.build_params(input)
+      assert result == QueryParams.build_params(input)
     end
   end
 end

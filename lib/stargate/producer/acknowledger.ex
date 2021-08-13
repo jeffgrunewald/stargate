@@ -43,12 +43,13 @@ defmodule Stargate.Producer.Acknowledger do
   @spec start_link(keyword()) :: GenServer.on_start()
   def start_link(init_args) do
     registry = Keyword.fetch!(init_args, :registry)
+    persistence = Keyword.get(init_args, :persistence, "persistent")
     tenant = Keyword.fetch!(init_args, :tenant)
     ns = Keyword.fetch!(init_args, :namespace)
     topic = Keyword.fetch!(init_args, :topic)
 
     GenServer.start_link(__MODULE__, init_args,
-      name: via(registry, :"sg_prod_ack_#{tenant}_#{ns}_#{topic}")
+      name: via(registry, {:producer_ack, "#{persistence}", "#{tenant}", "#{ns}", "#{topic}"})
     )
   end
 

@@ -1,11 +1,13 @@
 defmodule Stargate.Reader.QueryParamsTest do
   use ExUnit.Case
 
+  alias Stargate.Reader.QueryParams
+
   describe "Reader query params" do
     test "returns default (empty) query params" do
       input = %{}
 
-      assert "" == Stargate.Reader.QueryParams.build_params(input)
+      assert "" == QueryParams.build_params(input)
     end
 
     test "returns custom query params" do
@@ -17,7 +19,7 @@ defmodule Stargate.Reader.QueryParamsTest do
 
       result = "messageId=Dkx4SCF==&readerName=foobar&receiverQueueSize=500"
 
-      assert result == Stargate.Reader.QueryParams.build_params(input)
+      assert result == QueryParams.build_params(input)
     end
   end
 end

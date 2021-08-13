@@ -19,12 +19,14 @@ defmodule Stargate.Receiver.Supervisor do
   def start_link(args) do
     type = Keyword.fetch!(args, :type)
     registry = Keyword.fetch!(args, :registry)
+    persistence = Keyword.get(args, :persistence, "persistent")
     tenant = Keyword.fetch!(args, :tenant)
     namespace = Keyword.fetch!(args, :namespace)
     topic = Keyword.fetch!(args, :topic)
 
     Supervisor.start_link(__MODULE__, args,
-      name: via(registry, :"sg_#{type}_sup_#{tenant}_#{namespace}_#{topic}")
+      name:
+        via(registry, {:"#{type}_sup", "#{persistence}", "#{tenant}", "#{namespace}", "#{topic}"})
     )
   end
 
@@ -56,10 +58,11 @@ defmodule Stargate.Receiver.Supervisor do
   end
 
   defp to_child_spec(number, init_args) do
+    persistence = Keyword.get(init_args, :persistence, "persistent")
     tenant = Keyword.fetch!(init_args, :tenant)
     ns = Keyword.fetch!(init_args, :namespace)
     topic = Keyword.fetch!(init_args, :topic)
-    name = :"sg_processor_#{tenant}_#{ns}_#{topic}_#{number}"
+    name = {:processor, "#{persistence}", "#{tenant}", "#{ns}", "#{topic}_#{number}"}
     named_args = Keyword.put(init_args, :processor_name, name)
 
     Supervisor.child_spec({Stargate.Receiver.Processor, named_args}, id: name)

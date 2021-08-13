@@ -65,10 +65,9 @@ defmodule Stargate.Producer do
   def produce(url, messages) when is_binary(url) do
     with [protocol, _, host, _, _, _, persistence, tenant, ns, topic | _] <-
            String.split(url, "/"),
-         name when is_atom(name) <- temp_produce_name(tenant, ns, topic),
-         opts <- temp_producer_opts(name, protocol, host, persistence, tenant, ns, topic),
+         opts <- temp_producer_opts(:temp, protocol, host, persistence, tenant, ns, topic),
          {:ok, temp_producer} <- Stargate.Supervisor.start_link(opts),
-         :ok <- produce(via(:"sg_reg_#{name}", :"sg_prod_#{tenant}_#{ns}_#{topic}"), messages) do
+         :ok <- produce(via(:sg_reg_temp, {:producer, persistence, tenant, ns, topic}), messages) do
       Process.unlink(temp_producer)
       Supervisor.stop(temp_producer)
       :ok
@@ -191,7 +190,11 @@ defmodule Stargate.Producer do
       |> Stargate.Connection.auth_settings()
       |> Keyword.put(
         :name,
-        via(state.registry, :"sg_prod_#{state.tenant}_#{state.namespace}_#{state.topic}")
+        via(
+          state.registry,
+          {:producer, "#{state.persistence}", "#{state.tenant}", "#{state.namespace}",
+           "#{state.topic}"}
+        )
       )
 
     WebSockex.start_link(state.url, __MODULE__, state, server_opts)
@@ -200,7 +203,11 @@ defmodule Stargate.Producer do
   @impl WebSockex
   def handle_cast({:send, payload, ctx, ack}, state) do
     Acknowledger.produce(
-      via(state.registry, :"sg_prod_ack_#{state.tenant}_#{state.namespace}_#{state.topic}"),
+      via(
+        state.registry,
+        {:producer_ack, "#{state.persistence}", "#{state.tenant}", "#{state.namespace}",
+         "#{state.topic}"}
+      ),
       ctx,
       ack
     )
@@ -219,7 +226,10 @@ defmodule Stargate.Producer do
 
     :ok =
       state.registry
-      |> via(:"sg_prod_ack_#{state.tenant}_#{state.namespace}_#{state.topic}")
+      |> via(
+        {:producer_ack, "#{state.persistence}", "#{state.tenant}", "#{state.namespace}",
+         "#{state.topic}"}
+      )
       |> Acknowledger.ack(response)
 
     {:ok, state}
@@ -282,8 +292,6 @@ defmodule Stargate.Producer do
 
     {:error, reason, ctx}
   end
-
-  defp temp_produce_name(tenant, namespace, topic), do: :"#{tenant}_#{namespace}_#{topic}_temp"
 
   defp temp_producer_opts(name, protocol, host, persistence, tenant, namespace, topic) do
     [

@@ -7,10 +7,12 @@ defmodule Stargate.Supervisor do
   """
   use Supervisor
 
+  @type process_key :: {atom(), String.t(), String.t(), String.t(), String.t()}
+
   @doc """
   Convenience function for working with the Stargate process registry.
   """
-  @spec via(atom(), atom()) :: {:via, atom(), tuple()}
+  @spec via(atom(), process_key()) :: {:via, atom(), {atom(), process_key()}}
   def via(registry, name) do
     {:via, Registry, {registry, name}}
   end

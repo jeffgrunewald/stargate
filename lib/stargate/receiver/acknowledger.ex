@@ -23,6 +23,7 @@ defmodule Stargate.Receiver.Acknowledger do
     defstruct [
       :type,
       :registry,
+      :persistence,
       :tenant,
       :namespace,
       :topic,
@@ -38,12 +39,13 @@ defmodule Stargate.Receiver.Acknowledger do
   def start_link(init_args) do
     registry = Keyword.fetch!(init_args, :registry)
     type = Keyword.fetch!(init_args, :type)
+    persistence = Keyword.get(init_args, :persistence, "persistent")
     tenant = Keyword.fetch!(init_args, :tenant)
     ns = Keyword.fetch!(init_args, :namespace)
     topic = Keyword.fetch!(init_args, :topic)
 
     GenStage.start_link(__MODULE__, init_args,
-      name: via(registry, :"sg_#{type}_ack_#{tenant}_#{ns}_#{topic}")
+      name: via(registry, {:"#{type}_ack", "#{persistence}", "#{tenant}", "#{ns}", "#{topic}"})
     )
   end
 
@@ -51,6 +53,7 @@ defmodule Stargate.Receiver.Acknowledger do
   def init(init_args) do
     type = Keyword.fetch!(init_args, :type)
     registry = Keyword.fetch!(init_args, :registry)
+    persistence = Keyword.get(init_args, :persistence, "persistent")
     tenant = Keyword.fetch!(init_args, :tenant)
     ns = Keyword.fetch!(init_args, :namespace)
     topic = Keyword.fetch!(init_args, :topic)
@@ -59,13 +62,14 @@ defmodule Stargate.Receiver.Acknowledger do
     state = %State{
       type: type,
       registry: registry,
+      persistence: persistence,
       tenant: tenant,
       namespace: ns,
       topic: topic,
-      receiver: :"sg_#{type}_#{tenant}_#{ns}_#{topic}"
+      receiver: {:"#{type}", "#{persistence}", "#{tenant}", "#{ns}", "#{topic}"}
     }
 
-    subscriptions = subscriptions(registry, tenant, ns, topic, processors)
+    subscriptions = subscriptions(registry, persistence, tenant, ns, topic, processors)
 
     {:consumer, state, subscribe_to: subscriptions}
   end
@@ -91,12 +95,20 @@ defmodule Stargate.Receiver.Acknowledger do
     Enum.each(messages, &Stargate.Receiver.ack(receiver, &1))
   end
 
-  defp subscriptions(registry, tenant, namespace, topic, count) do
-    Enum.map(0..(count - 1), &subscription_spec(&1, registry, tenant, namespace, topic))
+  defp subscriptions(registry, persistence, tenant, namespace, topic, count) do
+    Enum.map(
+      0..(count - 1),
+      &subscription_spec(&1, registry, persistence, tenant, namespace, topic)
+    )
   end
 
-  defp subscription_spec(number, registry, tenant, namespace, topic) do
-    producer = via(registry, :"sg_processor_#{tenant}_#{namespace}_#{topic}_#{number}")
+  defp subscription_spec(number, registry, persistence, tenant, namespace, topic) do
+    producer =
+      via(
+        registry,
+        {:processor, "#{persistence}", "#{tenant}", "#{namespace}", "#{topic}_#{number}"}
+      )
+
     {producer, []}
   end
 end

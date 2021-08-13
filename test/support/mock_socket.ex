@@ -4,7 +4,7 @@ defmodule MockSocket.Supervisor do
   use Supervisor
 
   def start_link(init_args) do
-    Supervisor.start_link(__MODULE__, init_args, name: __MODULE__)
+    Supervisor.start_link(__MODULE__, init_args)
   end
 
   def init(init_args) do
@@ -114,7 +114,7 @@ defmodule SampleClient do
   use Stargate.Connection
 
   def cast(message), do: WebSockex.cast(__MODULE__, {:send, message})
-  def ping_socket(), do: send(__MODULE__, :send_ping)
+  def ping_socket, do: send(__MODULE__, :send_ping)
 
   def start_link(init_args) do
     port = Keyword.get(init_args, :port)

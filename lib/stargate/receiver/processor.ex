@@ -79,7 +79,11 @@ defmodule Stargate.Receiver.Processor do
     Process.put(:sg_persistence, state.persistence)
 
     dispatcher =
-      via(state.registry, :"sg_dispatcher_#{state.tenant}_#{state.namespace}_#{state.topic}")
+      via(
+        state.registry,
+        {:dispatcher, "#{state.persistence}", "#{state.tenant}", "#{state.namespace}",
+         "#{state.topic}"}
+      )
 
     {:ok, handler_state} = state.handler.init(state.handler_init_args)
 

@@ -1,6 +1,8 @@
 defmodule Stargate.Receiver.DispatcherTest do
   use ExUnit.Case
 
+  alias Stargate.Receiver.Dispatcher
+
   setup do
     reg_name = :sg_reg_dispatcher_test
     type = :reader
@@ -21,7 +23,7 @@ defmodule Stargate.Receiver.DispatcherTest do
 
     {:ok, registry} = Registry.start_link(keys: :unique, name: reg_name)
     {:ok, server} = MockSocket.Supervisor.start_link(port: port, path: path, source: self())
-    {:ok, dispatcher} = Stargate.Receiver.Dispatcher.start_link(opts)
+    {:ok, dispatcher} = Dispatcher.start_link(opts)
     {:ok, consumer} = MockConsumer.start_link(producer: dispatcher, source: self())
 
     on_exit(fn ->
@@ -33,7 +35,7 @@ defmodule Stargate.Receiver.DispatcherTest do
 
   describe "push/2" do
     test "generates events for each message pushed", %{dispatcher: dispatcher} do
-      :ok = Stargate.Receiver.Dispatcher.push(dispatcher, ["message1", "message2"])
+      :ok = Dispatcher.push(dispatcher, ["message1", "message2"])
 
       assert_receive {:event_received, ["message1", "message2"]}
     end

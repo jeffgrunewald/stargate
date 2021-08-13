@@ -1,6 +1,8 @@
 defmodule Stargate.Receiver.ProcessorTest do
   use ExUnit.Case
 
+  alias Stargate.Receiver.Processor
+
   setup do
     tenant = "default"
     ns = "public"
@@ -29,7 +31,7 @@ defmodule Stargate.Receiver.ProcessorTest do
         type: :dispatcher
       )
 
-    {:ok, processor} = Stargate.Receiver.Processor.start_link(opts)
+    {:ok, processor} = Processor.start_link(opts)
     {:ok, consumer} = MockConsumer.start_link(producer: processor)
 
     on_exit(fn ->
