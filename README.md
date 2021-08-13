@@ -53,7 +53,7 @@ helper to calculate this via-tuple easily. When supplying the `Stargate.registry
 assumes you're trying to reach the Producer process as this is the process most likely to be called directly (in conjunction within
 `Stargate.produce/2,3`), assumes a persistent topic (because Pulsar assumes topics are persistent by default) and assumes the
 Supervisor and Registry name suffix to be `:default`. If necessary, you can supply a Keyword List of options to customize the
-via-tuple returned by `Stargate.registry_key/4` with a combination of the arguments `:name`, `:component`, `:persistence`.
+via-tuple returned by `Stargate.registry_key/4` with a combination of the arguments `:name` or `:registry`, `:component`, `:persistence`.
 
 ```elixir
 iex> Stargate.registry_key("foo", "bar", "baz")
