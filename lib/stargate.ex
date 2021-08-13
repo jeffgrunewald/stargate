@@ -93,10 +93,11 @@ defmodule Stargate do
           {:via, Registry, {atom(), {component(), persistence(), tenant(), namespace(), topic()}}}
   def registry_key(tenant, namespace, topic, opts \\ []) do
     name = Keyword.get(opts, :name, :default)
+    registry = Keyword.get(opts, :registry) || :"sg_reg_#{name}"
     component = Keyword.get(opts, :component, :producer)
     persistence = Keyword.get(opts, :persistence, "persistent")
 
-    {:via, Registry, {:"sg_reg_#{name}", {component, persistence, tenant, namespace, topic}}}
+    {:via, Registry, {registry, {component, persistence, tenant, namespace, topic}}}
   end
 
   defmodule Message do
