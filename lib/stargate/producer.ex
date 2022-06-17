@@ -83,12 +83,12 @@ defmodule Stargate.Producer do
 
   def produce(producer, message) do
     {payload, ctx} = construct_payload(message)
-
-    WebSockex.cast(producer, {:send, payload, ctx, self()})
+    ref = make_ref()
+    WebSockex.cast(producer, {:send, payload, ctx, {self(), ref}})
 
     receive do
-      :ack -> :ok
-      err -> err
+      {^ref, :ack} -> :ok
+      {^ref, :error, reason} -> {:error, reason}
     end
   end
 
@@ -288,9 +288,8 @@ defmodule Stargate.Producer do
   end
 
   defp format_response(%{"result" => error, "errorMsg" => explanation, "context" => ctx}) do
-    reason = "Error of type : #{error} ocurred; #{explanation}"
-
-    {:error, reason, ctx}
+    Logger.debug("[Stargate] error of type : #{error} occurred; #{explanation}")
+    {:error, error, ctx}
   end
 
   defp temp_producer_opts(name, protocol, host, persistence, tenant, namespace, topic) do

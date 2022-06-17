@@ -25,18 +25,20 @@ defmodule Stargate.Producer.AcknowledgerTest do
 
   describe "synchronous ack" do
     test "tracks a produce and acknowledges to sender", %{acknowledger: acknowledger} do
-      :ok = ProdAcknowledger.produce(acknowledger, "123", self())
+      ref = make_ref()
+      :ok = ProdAcknowledger.produce(acknowledger, "123", {self(), ref})
 
       :ok = ProdAcknowledger.ack(acknowledger, {:ack, "123"})
-      assert_receive :ack
+      assert_receive {^ref, :ack}
     end
 
     test "returns errors to the sender", %{acknowledger: acknowledger} do
-      :ok = ProdAcknowledger.produce(acknowledger, "234", self())
+      ref = make_ref()
+      :ok = ProdAcknowledger.produce(acknowledger, "234", {self(), ref})
 
       :ok = ProdAcknowledger.ack(acknowledger, {:error, "whoops", "234"})
 
-      assert_receive {:error, "whoops"}
+      assert_receive {^ref, :error, "whoops"}
     end
   end
 

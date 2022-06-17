@@ -81,22 +81,7 @@ defmodule MockSocket do
         _ -> %{"messageId" => "message_id", "context" => "123"}
       end
 
-    case Map.get(received, "context") do
-      nil ->
-        response = Map.get(received, "messageId")
-        send(pid, {:received_frame, "#{response} loud and clear"})
-        {:ok, state}
-
-      ctx when is_binary(ctx) ->
-        id = Map.get(received, "messageId", "message_id")
-        response = "#{ctx}, #{Jason.encode!(received)}"
-        send(pid, {:received_frame, "#{response} loud and clear"})
-
-        {:reply,
-         {:text,
-          Jason.encode!(%{"result" => "ok", "messageId" => "#{id}", "context" => "#{ctx}"})},
-         state}
-    end
+    handle_message(pid, received, state)
   end
 
   def websocket_handle(:ping, %{source: pid} = state) do
@@ -106,6 +91,41 @@ defmodule MockSocket do
   end
 
   def websocket_info(_, state) do
+    {:ok, state}
+  end
+
+  defp handle_message(
+         pid,
+         %{"context" => ctx, "properties" => %{"error" => reason}} = received,
+         state
+       ) do
+    response = "#{ctx}, #{Jason.encode!(received)}"
+    message_id = Map.get(received, "messageId")
+    send(pid, {:received_frame, "#{response} loud and clear"})
+
+    {:reply,
+     {:text,
+      Jason.encode!(%{
+        "result" => "error",
+        "errorMsg" => reason,
+        "messageId" => message_id,
+        "context" => "#{ctx}"
+      })}, state}
+  end
+
+  defp handle_message(pid, %{"context" => ctx} = received, state) do
+    response = "#{ctx}, #{Jason.encode!(received)}"
+    message_id = Map.get(received, "messageId")
+    send(pid, {:received_frame, "#{response} loud and clear"})
+
+    {:reply,
+     {:text,
+      Jason.encode!(%{"result" => "ok", "messageId" => message_id, "context" => "#{ctx}"})},
+     state}
+  end
+
+  defp handle_message(pid, %{"messageId" => message_id}, state) do
+    send(pid, {:received_frame, "#{message_id} loud and clear"})
     {:ok, state}
   end
 end

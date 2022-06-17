@@ -25,18 +25,52 @@ defmodule Stargate.ProducerTest do
       ]
 
       {:ok, _registry} = Registry.start_link(keys: :unique, name: :sg_reg_producer)
-      {:ok, producer} = Stargate.Producer.start_link(opts)
+      {:ok, _} = Stargate.Producer.Supervisor.start_link(opts)
 
-      spawn(fn ->
+      producer =
+        Stargate.registry_key(opts[:tenant], opts[:namespace], opts[:topic],
+          registry: opts[:registry],
+          component: :producer
+        )
+
+      :ok =
         Stargate.produce(producer, %{
           "payload" => "helloooo",
           "context" => "123",
           "properties" => %{"key" => "value"}
         })
-      end)
 
       assert_receive {:received_frame,
                       "123, {\"context\":\"123\",\"payload\":\"aGVsbG9vb28=\",\"properties\":{\"key\":\"value\"}} loud and clear"}
+    end
+
+    test "sends a payload and context to the socket results in error", %{port: port} do
+      opts = [
+        registry: :sg_reg_producer,
+        host: [localhost: port],
+        tenant: "default",
+        namespace: "public",
+        topic: "foobar"
+      ]
+
+      {:ok, _registry} = Registry.start_link(keys: :unique, name: :sg_reg_producer)
+      {:ok, _} = Stargate.Producer.Supervisor.start_link(opts)
+
+      producer =
+        Stargate.registry_key(opts[:tenant], opts[:namespace], opts[:topic],
+          registry: opts[:registry],
+          component: :producer
+        )
+
+      {:error, "error"} =
+        Stargate.produce(producer, %{
+          "payload" => "helloooo",
+          "context" => "123",
+          "properties" => %{"error" => "something went wrong"}
+        })
+
+      assert_receive {:received_frame,
+                      "123, {\"context\":\"123\",\"payload\":\"aGVsbG9vb28=\",\"properties\":{\"error\":\"something went wrong\"}} loud and clear"}
     end
 
     test "produces via one-off producer", %{port: port} do
@@ -60,20 +94,22 @@ defmodule Stargate.ProducerTest do
       ]
 
       {:ok, _registry} = Registry.start_link(keys: :unique, name: :sg_reg_producer)
-      {:ok, producer} = Stargate.Producer.start_link(opts)
+      {:ok, _} = Stargate.Producer.Supervisor.start_link(opts)
 
-      executor =
-        spawn(fn ->
-          Stargate.produce(producer, [
-            %{"payload" => "hello", "context" => "123"},
-            %{"payload" => "world", "context" => "456"}
-          ])
-        end)
+      producer =
+        Stargate.registry_key(opts[:tenant], opts[:namespace], opts[:topic],
+          registry: opts[:registry],
+          component: :producer
+        )
+
+      :ok =
+        Stargate.produce(producer, [
+          %{"payload" => "hello", "context" => "123"},
+          %{"payload" => "world", "context" => "456"}
+        ])
 
       assert_receive {:received_frame,
                       "123, {\"context\":\"123\",\"payload\":\"aGVsbG8=\"} loud and clear"}
-
-      send(executor, :ack)
 
       assert_receive {:received_frame,
                       "456, {\"context\":\"456\",\"payload\":\"d29ybGQ=\"} loud and clear"}
