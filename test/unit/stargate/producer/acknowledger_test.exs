@@ -1,6 +1,5 @@
 defmodule Stargate.Producer.AcknowledgerTest do
   use ExUnit.Case
-  import ExUnit.CaptureLog
 
   alias Stargate.Producer.Acknowledger, as: ProdAcknowledger
 
@@ -43,34 +42,36 @@ defmodule Stargate.Producer.AcknowledgerTest do
   end
 
   describe "asynchronous ack" do
+    defmodule Ack do
+      def ack(res, pid, msg) do
+        send(pid, {res, msg})
+      end
+    end
+
     test "tracks a produce and executes the saved function", %{acknowledger: acknowledger} do
       :ok =
         ProdAcknowledger.produce(
           acknowledger,
           "123",
-          {Kernel, :send, [self(), "async_ack"]}
+          {Stargate.Producer.AcknowledgerTest.Ack, :ack, [self(), "async_ack"]}
         )
 
       :ok = ProdAcknowledger.ack(acknowledger, {:ack, "123"})
 
-      assert_receive "async_ack"
+      assert_receive {:ok, "async_ack"}
     end
 
     test "logs errors when they occur during async ack", %{acknowledger: acknowledger} do
-      ack_function = fn ->
-        :ok =
-          ProdAcknowledger.produce(
-            acknowledger,
-            "234",
-            {Kernel, :send, [self(), "async_ack_error"]}
-          )
+      :ok =
+        ProdAcknowledger.produce(
+          acknowledger,
+          "234",
+          {Stargate.Producer.AcknowledgerTest.Ack, :ack, [self(), "async_ack_error"]}
+        )
 
-        :ok = ProdAcknowledger.ack(acknowledger, {:error, "oh nooo", "234"})
+      :ok = ProdAcknowledger.ack(acknowledger, {:error, "oh nooo", "234"})
 
-        Process.sleep(10)
-      end
-
-      assert capture_log(ack_function) =~ "Failed to execute produce for reason : \"oh nooo\""
+      assert_receive {{:error, "oh nooo"}, "async_ack_error"}
     end
   end
 

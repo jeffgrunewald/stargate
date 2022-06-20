@@ -72,7 +72,7 @@ defmodule Stargate.Producer.Acknowledger do
         send(pid, {ref, :ack})
 
       {module, function, args} ->
-        apply(module, function, args)
+        apply(module, function, [:ok | args])
     end
 
     {:noreply, new_state}
@@ -86,8 +86,8 @@ defmodule Stargate.Producer.Acknowledger do
       {pid, ref} when is_pid(pid) ->
         send(pid, {ref, :error, reason})
 
-      _mfa ->
-        Logger.error("Failed to execute produce for reason : #{inspect(reason)}")
+      {module, function, args} ->
+        apply(module, function, [{:error, reason} | args])
     end
 
     {:noreply, new_state}
