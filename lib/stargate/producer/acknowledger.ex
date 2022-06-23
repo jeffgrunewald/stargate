@@ -68,8 +68,8 @@ defmodule Stargate.Producer.Acknowledger do
     {value, new_state} = Map.pop(state, ctx)
 
     case value do
-      pid when is_pid(pid) ->
-        send(pid, :ack)
+      {pid, ref} when is_pid(pid) ->
+        send(pid, {ref, :ack})
 
       {module, function, args} ->
         apply(module, function, args)
@@ -83,8 +83,8 @@ defmodule Stargate.Producer.Acknowledger do
     {value, new_state} = Map.pop(state, ctx)
 
     case value do
-      pid when is_pid(pid) ->
-        send(pid, {:error, reason})
+      {pid, ref} when is_pid(pid) ->
+        send(pid, {ref, :error, reason})
 
       _mfa ->
         Logger.error("Failed to execute produce for reason : #{inspect(reason)}")
