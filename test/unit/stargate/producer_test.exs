@@ -33,12 +33,12 @@ defmodule Stargate.ProducerTest do
           component: :producer
         )
 
-      :ok =
-        Stargate.produce(producer, %{
-          "payload" => "helloooo",
-          "context" => "123",
-          "properties" => %{"key" => "value"}
-        })
+      assert :ok =
+               Stargate.produce(producer, %{
+                 "payload" => "helloooo",
+                 "context" => "123",
+                 "properties" => %{"key" => "value"}
+               })
 
       assert_receive {:received_frame,
                       "123, {\"context\":\"123\",\"payload\":\"aGVsbG9vb28=\",\"properties\":{\"key\":\"value\"}} loud and clear"}
@@ -71,6 +71,31 @@ defmodule Stargate.ProducerTest do
 
       assert_receive {:received_frame,
                       "123, {\"context\":\"123\",\"payload\":\"aGVsbG9vb28=\",\"properties\":{\"error\":\"something went wrong\"}} loud and clear"}
+    end
+
+    test "produce fails because socket is not connected", %{port: port} do
+      opts = [
+        registry: :sg_reg_producer,
+        host: [localhost: port + 1],
+        tenant: "default",
+        namespace: "public",
+        topic: "foobar"
+      ]
+
+      {:ok, _registry} = Registry.start_link(keys: :unique, name: :sg_reg_producer)
+      {:ok, _} = Stargate.Producer.Supervisor.start_link(opts)
+
+      producer =
+        Stargate.registry_key(opts[:tenant], opts[:namespace], opts[:topic],
+          registry: opts[:registry],
+          component: :producer
+        )
+
+      {:error, :not_connected} =
+        Stargate.produce(producer, %{
+          "payload" => "helloooo",
+          "context" => "123"
+        })
     end
 
     test "produces via one-off producer", %{port: port} do
@@ -125,6 +150,12 @@ defmodule Stargate.ProducerTest do
   end
 
   describe "produce/3" do
+    defmodule Ack do
+      def ack(res, pid, msg) do
+        send(pid, {res, msg})
+      end
+    end
+
     test "handles produce acking out of band", %{port: port} do
       opts = [
         name: "produce_3_test",
@@ -147,16 +178,56 @@ defmodule Stargate.ProducerTest do
         )
 
       test = self()
+      context = "123"
 
       spawn(fn ->
         Stargate.produce(
           producer,
-          %{"context" => "123", "payload" => "message"},
-          {Kernel, :send, [test, "message received"]}
+          %{"context" => context, "payload" => "message"},
+          {Stargate.ProducerTest.Ack, :ack, [test, context]}
         )
       end)
 
-      assert_receive "message received", 1_000
+      assert_receive {:ok, "123"}, 1_000
+
+      assert_receive {:received_frame,
+                      "123, {\"context\":\"123\",\"payload\":\"bWVzc2FnZQ==\"} loud and clear"},
+                     1_000
+    end
+
+    test "handles produce acking out of band error", %{port: port} do
+      opts = [
+        name: "produce_3_test",
+        host: [localhost: port + 1],
+        protocol: "ws",
+        producer: [
+          persistence: "persistent",
+          tenant: "default",
+          namespace: "public",
+          topic: "foobar"
+        ]
+      ]
+
+      {:ok, _supervisor} = Stargate.Supervisor.start_link(opts)
+
+      [{producer, _}] =
+        Registry.lookup(
+          :sg_reg_produce_3_test,
+          {:producer, "persistent", "default", "public", "foobar"}
+        )
+
+      test = self()
+      context = "123"
+
+      spawn(fn ->
+        Stargate.produce(
+          producer,
+          %{"context" => context, "payload" => "message"},
+          {Stargate.ProducerTest.Ack, :ack, [test, context]}
+        )
+      end)
+
+      assert_receive {{:error, :not_connected}, ^context}, 1_000
     end
   end
 

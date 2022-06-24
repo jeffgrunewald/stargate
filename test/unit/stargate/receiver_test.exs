@@ -25,19 +25,28 @@ defmodule Stargate.ReceiverTest do
 
     {:ok, registry} = Registry.start_link(keys: :unique, name: :"sg_reg_#{reg_name}")
     {:ok, server} = MockSocket.Supervisor.start_link(port: port, path: path, source: self())
-    {:ok, dispatcher} = Dispatcher.start_link(opts)
-    {:ok, consumer} = MockConsumer.start_link(producer: dispatcher, source: self())
 
     receiver = Stargate.registry_key(tenant, ns, topic, component: type, name: reg_name)
 
     on_exit(fn ->
-      Enum.map([registry, server, dispatcher, consumer], &kill/1)
+      Enum.map([registry, server], &kill/1)
     end)
 
-    [receiver: receiver]
+    [opts: opts, receiver: receiver]
   end
 
   describe "handle_frame" do
+    setup %{opts: opts} do
+      {:ok, dispatcher} = Dispatcher.start_link(opts)
+      {:ok, consumer} = MockConsumer.start_link(producer: dispatcher, source: self())
+
+      on_exit(fn ->
+        Enum.map([dispatcher, consumer], &kill/1)
+      end)
+
+      []
+    end
+
     test "receives messages from the socket", %{receiver: receiver} do
       Enum.each(0..2, fn _ -> WebSockex.send_frame(receiver, {:text, "push_message"}) end)
 
@@ -48,6 +57,17 @@ defmodule Stargate.ReceiverTest do
   end
 
   describe "ack/2" do
+    setup %{opts: opts} do
+      {:ok, dispatcher} = Dispatcher.start_link(opts)
+      {:ok, consumer} = MockConsumer.start_link(producer: dispatcher, source: self())
+
+      on_exit(fn ->
+        Enum.map([dispatcher, consumer], &kill/1)
+      end)
+
+      []
+    end
+
     test "sends receive acks to the socket", %{receiver: receiver} do
       Enum.map(["ack1", "ack2", "ack3"], &Stargate.Receiver.ack(receiver, &1))
 
@@ -57,8 +77,29 @@ defmodule Stargate.ReceiverTest do
     end
   end
 
-  describe "pull_permit/2" do
-    test "sends permit requests through the socket", %{receiver: receiver} do
+  describe "pull mode" do
+    setup %{opts: opts} do
+      opts =
+        Keyword.merge(opts,
+          backoff_calculator: fn _ -> 0 end,
+          query_params: %{
+            pull_mode: true
+          }
+        )
+
+      {:ok, dispatcher} = Dispatcher.start_link(opts)
+
+      {:ok, consumer} =
+        MockConsumer.start_link(producer: dispatcher, source: self(), max_demand: 1)
+
+      on_exit(fn ->
+        Enum.map([dispatcher, consumer], &kill/1)
+      end)
+
+      []
+    end
+
+    test "pull_permit sends permit requests through the socket", %{receiver: receiver} do
       Stargate.Receiver.pull_permit(receiver, 10)
       assert_receive {:permit_request, "permitting 10 messages"}
 
@@ -67,6 +108,49 @@ defmodule Stargate.ReceiverTest do
 
       Stargate.Receiver.pull_permit(receiver, 100)
       assert_receive {:permit_request, "permitting 100 messages"}
+    end
+
+    test "continue on reconnect", %{receiver: receiver} do
+      assert_receive {:permit_request, "permitting 1 messages"}
+      WebSockex.send_frame(receiver, {:text, "push_message"})
+
+      assert_receive {:event_received, ["consumer message 0"]}
+
+      :ok = WebSockex.send_frame(receiver, {:text, "stop"})
+
+      Process.sleep(100)
+
+      assert_receive {:permit_request, "permitting 1 messages"}
+
+      WebSockex.send_frame(receiver, {:text, "push_message"})
+      assert_receive {:event_received, ["consumer message 0"]}
+    end
+  end
+
+  describe "push mode" do
+    setup %{opts: opts} do
+      opts = Keyword.merge(opts, backoff_calculator: fn _ -> 0 end)
+      {:ok, dispatcher} = Dispatcher.start_link(opts)
+      {:ok, consumer} = MockConsumer.start_link(producer: dispatcher, source: self())
+
+      on_exit(fn ->
+        Enum.map([dispatcher, consumer], &kill/1)
+      end)
+
+      []
+    end
+
+    test "continue on reconnect", %{receiver: receiver} do
+      WebSockex.send_frame(receiver, {:text, "push_message"})
+
+      assert_receive {:event_received, ["consumer message 0"]}
+
+      :ok = WebSockex.send_frame(receiver, {:text, "stop"})
+
+      Process.sleep(100)
+
+      WebSockex.send_frame(receiver, {:text, "push_message"})
+      assert_receive {:event_received, ["consumer message 0"]}
     end
   end
 

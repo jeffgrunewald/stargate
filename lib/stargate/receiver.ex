@@ -9,6 +9,7 @@ defmodule Stargate.Receiver do
   import Stargate.Supervisor, only: [via: 2]
   alias Stargate.{Consumer, Reader}
   alias Stargate.Receiver.Dispatcher
+  alias Stargate.Connection
 
   @typedoc "A string identifier assigned to each message by the cluster"
   @type message_id :: String.t()
@@ -57,7 +58,8 @@ defmodule Stargate.Receiver do
       :tenant,
       :namespace,
       :topic,
-      :query_params
+      :query_params,
+      :backoff_calculator
     ]
   end
 
@@ -89,6 +91,7 @@ defmodule Stargate.Receiver do
         on the received messages. Defaults to 1.
       * `handler_init_args` is any term that will be passed to the message handler to initialize
         its state when a stateful handler is desired. Defaults to an empty list.
+      * `backoff_calculator` See `Stargate.Connection.t:backoff_calculator/0`.
       * `query_params` is a map containing any or all of the following:
 
       # Consumer
@@ -122,6 +125,9 @@ defmodule Stargate.Receiver do
     registry = Keyword.fetch!(args, :registry)
     query_params_config = Keyword.get(args, :query_params)
 
+    backoff_calculator =
+      Keyword.get(args, :backoff_calculator, Stargate.Connection.default_backoff_calculator())
+
     query_params =
       case type do
         :consumer -> Consumer.QueryParams.build_params(query_params_config)
@@ -130,7 +136,8 @@ defmodule Stargate.Receiver do
 
     setup_state = %{
       registry: registry,
-      query_params: query_params_config
+      query_params: query_params_config,
+      backoff_calculator: backoff_calculator
     }
 
     state =
@@ -152,6 +159,19 @@ defmodule Stargate.Receiver do
       )
 
     WebSockex.start_link(state.url, __MODULE__, state, server_opts)
+  end
+
+  @impl Connection
+  def handle_connected(state) do
+    :ok =
+      state.registry
+      |> via(
+        {:dispatcher, "#{state.persistence}", "#{state.tenant}", "#{state.namespace}",
+         "#{state.topic}"}
+      )
+      |> Dispatcher.connected()
+
+    :ok
   end
 
   @impl WebSockex

@@ -36,7 +36,7 @@ defmodule Stargate.MixProject do
       {:jason, "~> 1.2"},
       {:plug_cowboy, "~> 2.5", only: [:test, :integration]},
       {:puid, "~> 1.1.1"},
-      {:websockex, "~> 0.4.3"},
+      {:websockex, github: "BrendanBall/websockex", branch: "backoff_reconnect"},
       {:credo, "~> 1.5", only: [:dev, :test], runtime: false}
     ]
   end

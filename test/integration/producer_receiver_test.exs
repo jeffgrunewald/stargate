@@ -103,6 +103,10 @@ defmodule Stargate.ProducerReceiverTest do
           consumer: consumer_opts
         )
 
+      # Connections are established asynchronously to the process startup
+      # And subscriptions only receive messages from when they were created.
+      Process.sleep(100)
+
       Stargate.registry_key(tenant, namespace, topic)
       |> Stargate.produce(input)
 
@@ -152,6 +156,10 @@ defmodule Stargate.ProducerReceiverTest do
             }
           ]
         )
+
+      # Connections are established asynchronously to the process startup
+      # And subscriptions only receive messages from when they were created.
+      Process.sleep(100)
 
       Stargate.registry_key(tenant, namespace, topic)
       |> Stargate.produce(input)

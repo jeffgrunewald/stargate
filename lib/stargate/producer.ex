@@ -12,6 +12,7 @@ defmodule Stargate.Producer do
   use Puid
   import Stargate.Supervisor, only: [via: 2]
   alias Stargate.Producer.{Acknowledger, QueryParams}
+  alias Stargate.Connection
 
   @typedoc """
   A URL defining the host and topic to which a Stargate producer can
@@ -99,7 +100,8 @@ defmodule Stargate.Producer do
   When calling `produce/3` the third argument must be an MFA tuple which is used by
   the producer's acknowledger process to asynchronously perform acknowledgement that the
   message was received by the cluster successfully. This is used to avoid blocking the
-  calling process for performance reasons.
+  calling process for performance reasons. The result of the produce is added as a first
+  argument when calling the MFA tuple which is either `:ok` or `{:error, reason}`.
   """
   @spec produce(producer(), message() | [message()], {module(), atom(), [term()]}) ::
           :ok | {:error, term()}
@@ -130,7 +132,8 @@ defmodule Stargate.Producer do
       :tenant,
       :namespace,
       :topic,
-      :query_params
+      :query_params,
+      :backoff_calculator
     ]
   end
 
@@ -153,6 +156,7 @@ defmodule Stargate.Producer do
       * `persistence` can be one of "persistent" or "non-persistent" per the Pulsar
         specification of topics as being in-memory only or persisted to the brokers' disks.
         Defaults to "persistent".
+      * `backoff_calculator` See `Stargate.Connection.t:backoff_calculator/0`.
       * `query_params` is a map containing any or all of the following:
 
           * `send_timeout` the time at which a produce operation will time out; defaults to 30 seconds
@@ -178,11 +182,15 @@ defmodule Stargate.Producer do
     query_params = QueryParams.build_params(query_params_config)
     registry = Keyword.fetch!(args, :registry)
 
+    backoff_calculator =
+      Keyword.get(args, :backoff_calculator, Stargate.Connection.default_backoff_calculator())
+
     state =
       args
       |> Stargate.Connection.connection_settings(:producer, query_params)
       |> Map.put(:query_params, query_params_config)
       |> Map.put(:registry, registry)
+      |> Map.put(:backoff_calculator, backoff_calculator)
       |> (fn fields -> struct(State, fields) end).()
 
     server_opts =
@@ -202,17 +210,16 @@ defmodule Stargate.Producer do
 
   @impl WebSockex
   def handle_cast({:send, payload, ctx, ack}, state) do
-    Acknowledger.produce(
+    ack_name =
       via(
         state.registry,
         {:producer_ack, "#{state.persistence}", "#{state.tenant}", "#{state.namespace}",
          "#{state.topic}"}
-      ),
-      ctx,
-      ack
-    )
+      )
 
-    {:reply, {:text, payload}, state}
+    Acknowledger.produce(ack_name, ctx, ack)
+
+    {:reply, {:text, payload}, ctx, state}
   end
 
   @impl WebSockex
@@ -233,6 +240,19 @@ defmodule Stargate.Producer do
       |> Acknowledger.ack(response)
 
     {:ok, state}
+  end
+
+  @impl Connection
+  def handle_send_error(reason, ctx, state) do
+    :ok =
+      state.registry
+      |> via(
+        {:producer_ack, "#{state.persistence}", "#{state.tenant}", "#{state.namespace}",
+         "#{state.topic}"}
+      )
+      |> Acknowledger.ack({:error, reason, ctx})
+
+    :ok
   end
 
   defp construct_payload(%{"payload" => _payload, "context" => context} = message) do

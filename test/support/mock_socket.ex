@@ -64,6 +64,10 @@ defmodule MockSocket do
     {:reply, {:text, message}, %{state | count: count + 1}}
   end
 
+  def websocket_handle({:text, "stop"}, state) do
+    {:stop, state}
+  end
+
   def websocket_handle(
         {:text, "{\"type\":\"permit" <> _permits = message},
         %{source: pid} = state
@@ -134,19 +138,53 @@ defmodule SampleClient do
   use Stargate.Connection
 
   def cast(message), do: WebSockex.cast(__MODULE__, {:send, message})
+  def cast(message, ref), do: WebSockex.cast(__MODULE__, {:send, message, ref})
   def ping_socket, do: send(__MODULE__, :send_ping)
 
   def start_link(init_args) do
     port = Keyword.get(init_args, :port)
     path = Keyword.get(init_args, :path)
-    WebSockex.start_link("http://localhost:#{port}/#{path}", __MODULE__, %{}, name: __MODULE__)
+    test_pid = self()
+
+    backoff_calculator =
+      Keyword.get(
+        init_args,
+        :backoff_calculator,
+        Stargate.Connection.default_backoff_calculator()
+      )
+
+    url = "http://localhost:#{port}/#{path}"
+
+    state = %{
+      backoff_calculator: backoff_calculator,
+      test_pid: test_pid,
+      url: url
+    }
+
+    WebSockex.start_link(url, __MODULE__, state, name: __MODULE__)
   end
 
   def handle_cast({:send, payload}, state) do
     {:reply, {:text, payload}, state}
   end
 
+  def handle_cast({:send, payload, ref}, state) do
+    {:reply, {:text, payload}, ref, state}
+  end
+
   def handle_frame({:text, _message}, state) do
     {:ok, state}
+  end
+
+  @impl Stargate.Connection
+  def handle_connected(%{test_pid: pid}) do
+    send(pid, :client_connected)
+    :ok
+  end
+
+  @impl Stargate.Connection
+  def handle_send_error(reason, ref, %{test_pid: pid}) do
+    send(pid, {:received_send_error, reason, ref})
+    :ok
   end
 end

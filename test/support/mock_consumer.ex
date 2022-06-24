@@ -13,7 +13,9 @@ defmodule MockConsumer do
       source: Keyword.get(init_args, :source)
     }
 
-    {:consumer, state, subscribe_to: [{state.producer, []}]}
+    max_demand = Keyword.get(init_args, :max_demand, 5)
+
+    {:consumer, state, subscribe_to: [{state.producer, [max_demand: max_demand]}]}
   end
 
   def handle_events(messages, _from, state) do

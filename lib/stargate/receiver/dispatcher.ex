@@ -44,6 +44,14 @@ defmodule Stargate.Receiver.Dispatcher do
   def push(dispatcher, messages), do: GenServer.cast(dispatcher, {:push, messages})
 
   @doc """
+  Notify that producer is connected.
+  This is relevant when using `pull_mode` and `handle_demand` had an error because the
+  connection wasn't established, likely because it was in a backoff state.
+  """
+  @spec connected(GenServer.server()) :: :ok
+  def connected(dispatcher), do: GenServer.cast(dispatcher, :connected)
+
+  @doc """
   Starts a `Stargate.Receiver.Dispatcher` GenStage process and links it to
   the calling process.
   """
@@ -67,6 +75,7 @@ defmodule Stargate.Receiver.Dispatcher do
     tenant = Keyword.fetch!(init_args, :tenant)
     ns = Keyword.fetch!(init_args, :namespace)
     topic = Keyword.fetch!(init_args, :topic)
+    registry = Keyword.fetch!(init_args, :registry)
 
     pull =
       case get_in(init_args, [:query_params, :pull_mode]) do
@@ -75,13 +84,13 @@ defmodule Stargate.Receiver.Dispatcher do
       end
 
     state = %State{
-      registry: Keyword.fetch!(init_args, :registry),
+      registry: registry,
       persistence: persistence,
       tenant: tenant,
       namespace: ns,
       topic: topic,
       pull_mode: pull,
-      receiver: {:"#{type}", "#{persistence}", "#{tenant}", "#{ns}", "#{topic}"}
+      receiver: via(registry, {:"#{type}", "#{persistence}", "#{tenant}", "#{ns}", "#{topic}"})
     }
 
     {:ok, _receiver} = Stargate.Receiver.start_link(init_args)
@@ -98,12 +107,20 @@ defmodule Stargate.Receiver.Dispatcher do
   def handle_cast({:push, message}, state), do: {:noreply, [message], state}
 
   @impl GenStage
-  def handle_demand(demand, %{pull_mode: true} = state) do
-    receiver = via(state.registry, state.receiver)
-
+  def handle_cast(:connected, %{demand: demand, receiver: receiver} = state) do
     Stargate.Receiver.pull_permit(receiver, demand)
-
     {:noreply, [], state}
+  end
+
+  @impl GenStage
+  def handle_cast(:connected, state) do
+    {:noreply, [], state}
+  end
+
+  @impl GenStage
+  def handle_demand(demand, %{pull_mode: true, receiver: receiver} = state) do
+    Stargate.Receiver.pull_permit(receiver, demand)
+    {:noreply, [], Map.put(state, :demand, demand)}
   end
 
   @impl GenStage
