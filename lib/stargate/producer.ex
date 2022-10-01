@@ -171,6 +171,38 @@ defmodule Stargate.Producer do
           * `initial_seq_id` sets the baseline for the sequence ids assigned to published messages.
           * `hashing_scheme` can be one of :java_string or :murmur3 when defining a hashing function to
             use with partitioned topics. _Pulsar has deprecated this parameter_.
+
+  Note, the `producer` key of the supervisor config options will accept a list of producer configuration options to allow a
+  single superviser to start and manage multiple producers.
+
+  ```
+  [
+      name: :my_app,
+      host: [{"localhost", 8080}],
+      producer: [
+            [
+              persistence: "persistent",
+              tenant: "na_sales",
+              namespace: "electronics",
+              topic: "events"
+            ],
+            [
+              persistence: "persistent",
+              tenant: "eu_sales",
+              namespace: "textiles",
+              topic: "events"
+            ]
+      ]
+  ]
+  ```
+
+  While this is perfectly possible, you should carefully
+  consider your supervision strategy and only group producers to different namespaces/tenants/topics/etc under a single
+  supervisor where it makes sense to have the process lifecycle of each producer tightly linked to one another and
+  consider the implications of a failure/death of one producer process on the others. Depending on your specific use case
+  it is often equally if not more correct to have each unique producer under a dedicated supervisor, perhaps managed by
+  a still higher-level supervisor in your own application. Plan accordingly based on your expected failure scenarios.
+
   """
   @spec start_link(keyword()) :: GenServer.on_start()
   def start_link(args) do
