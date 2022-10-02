@@ -35,7 +35,7 @@ defmodule Stargate.MixProject do
       {:gen_stage, "~> 1.1"},
       {:jason, "~> 1.4"},
       {:plug_cowboy, "~> 2.5", only: [:test, :integration]},
-      {:puid, "~> 2.0"},
+      {:puid, "~> 1.1"},
       {:websockex, "~> 0.4.3"},
       {:credo, "~> 1.6", only: [:dev, :test], runtime: false}
     ]
